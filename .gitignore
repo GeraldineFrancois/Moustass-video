@@ -1,0 +1,13 @@
+#folders
+.idea/
+.vscode/
+
+#python
+__pycache__/
+
+#environment
+.env
+.virtualenv/
+
+#snyk
+.github/instructions/snyk_rules.instructions.md
