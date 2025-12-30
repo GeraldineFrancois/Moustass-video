@@ -1,0 +1,58 @@
+name: Snyk Security (Python)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  snyk:
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout du code
+      - uses: actions/checkout@v4
+
+      # 2. Installer Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # 3. Installer dépendances Python
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # 4. Installer le CLI Snyk
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      # 5. Authentification Snyk
+      - name: Authenticate Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk auth $SNYK_TOKEN
+
+      # 6. Analyse Snyk Code (SAST)
+      - name: Snyk Code test
+        run: snyk code test --sarif > snyk-code.sarif || true
+
+      # 7. Analyse Snyk Open Source (SCA) - dépendances Python
+      - name: Snyk Open Source monitor (Python)
+        run: snyk monitor --file=requirements.txt
+
+      # 8. Envoi des résultats SAST dans GitHub Security
+      - name: Upload Snyk Code result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-code.sarif
