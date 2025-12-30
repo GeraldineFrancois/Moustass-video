@@ -56,8 +56,9 @@ jobs:
 
       # 8. Analyse Snyk Open Source (SCA)
       - name: Snyk Open Source monitor (Python)
-        if: exists('requirements.txt')
+        if: hashFiles('requirements.txt') != ''
         run: snyk monitor --file=requirements.txt
+
 
       # 9. Upload SARIF vers GitHub Code Scanning
       - name: Upload Snyk Code result to GitHub Code Scanning
