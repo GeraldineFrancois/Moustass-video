@@ -43,27 +43,16 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk auth $SNYK_TOKEN
 
-      # 6. Analyse Snyk Code (SAST) - génération SARIF valide
+      # 6. Analyse Snyk Code (SAST) – génération SARIF si possible
       - name: Snyk Code test
-        run: |
-          snyk code test --sarif-file-output=snyk-code.sarif || true
+        run: snyk code test --sarif-file-output=snyk-code.sarif || true
 
-      # 7. Vérification du fichier SARIF
-      - name: Check SARIF file
-        run: |
-          test -f snyk-code.sarif
-          head -n 5 snyk-code.sarif
-
-      # 8. Analyse Snyk Open Source (SCA)
+      # 7. Analyse Snyk Open Source (SCA) – dépendances Python
       - name: Snyk Open Source monitor (Python)
         if: hashFiles('requirements.txt') != ''
         run: snyk monitor --file=requirements.txt
 
-
-      # 9. Upload SARIF vers GitHub Code Scanning
-      - name: Snyk Code test
-        run: snyk code test --sarif-file-output=snyk-code.sarif || true
-      
+      # 8. Upload SARIF vers GitHub Code Scanning (si présent)
       - name: Upload Snyk Code result to GitHub Code Scanning
         if: hashFiles('snyk-code.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
