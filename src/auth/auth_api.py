@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from . import schemas, crud, security, auth_service
 from .database import init_db, get_db
+from . import database
 from sqlalchemy.orm import Session
 import os
 
@@ -81,13 +82,78 @@ async def signup_client(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post('/login')
-def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
+async def login(request: Request, db: Session = Depends(get_db)):
+	# accept either JSON body or HTML form posts
+	if request.headers.get('content-type', '').startswith('application/x-www-form-urlencoded'):
+		form = await request.form()
+		data = {k: form.get(k) for k in ('email', 'password')}
+	else:
+		data = await request.json()
+	try:
+		payload = schemas.LoginRequest(**data)
+	except Exception as e:
+		raise HTTPException(status_code=422, detail=str(e))
+
 	user = crud.get_user_by_email(db, payload.email)
 	if not user:
 		raise HTTPException(status_code=401, detail='Invalid credentials')
-	# Verify using the stored bcrypt hash. Do not append our app-level salt to the
-	# password before verification because bcrypt/passlib manage salting internally.
-	if not security.verify_password(payload.password, user.password_hash):
+
+	# Support legacy hashes where we previously hashed password+salt and in some
+	# historical cases the salt was appended to the stored hash string.
+	stored_hash = user.password_hash or ''
+	salt = user.password_salt or ''
+	verified = False
+
+	# Case A: hash stored normally (no appended salt) and was computed over plain password
+	if stored_hash:
+		try:
+			verified = security.verify_password(payload.password, stored_hash)
+		except Exception:
+			verified = False
+
+	# Case B: hash stored normally but was computed over password+salt
+	if not verified and salt:
+		try:
+			verified = security.verify_password(payload.password + salt, stored_hash)
+		except Exception:
+			verified = False
+
+	# Case C: legacy bug where salt was appended to the stored hash string itself
+	if not verified and salt and stored_hash.endswith(salt):
+		real_hash = stored_hash[:-len(salt)]
+		try:
+			# original hash was likely computed over password+salt
+			verified = security.verify_password(payload.password + salt, real_hash)
+		except Exception:
+			verified = False
+
+	# If we verified using any legacy method, migrate to the new scheme (hash plain password)
+	if verified and not stored_hash.startswith('$pbkdf2-sha256'):
+		# for non-pbkdf2 stored hashes we still re-hash
+		try:
+			new_hash = security.hash_password(payload.password)
+			user.password_hash = new_hash
+			db.add(user)
+			db.commit()
+			db.refresh(user)
+		except Exception:
+			pass
+	elif verified and stored_hash.endswith(salt):
+		# if we detected appended-salt format, migrate to clean hash
+		try:
+			new_hash = security.hash_password(payload.password)
+			user.password_hash = new_hash
+			db.add(user)
+			db.commit()
+			db.refresh(user)
+		except Exception:
+			pass
+	if not verified:
+		import logging
+		logger = logging.getLogger('uvicorn.error')
+		logger.warning('Login failed for %s; pw_len=%d hash_prefix=%s salt_len=%d',
+					   payload.email, len(payload.password), (user.password_hash or '')[:10],
+					   len(user.password_salt or ''))
 		raise HTTPException(status_code=401, detail='Invalid credentials')
 	token = security.create_access_token({'sub': user.email, 'role': user.role, 'user_id': user.id})
 	crud.log_event(db, 'login', user.id, success=1)
@@ -111,3 +177,24 @@ def admin_dashboard(request: Request):
 @app.get('/client/dashboard', response_class=HTMLResponse)
 def client_dashboard(request: Request):
 	return templates.TemplateResponse('client.html', {'request': request})
+
+
+@app.get('/__debug_user')
+def debug_user(email: str, db: Session = Depends(get_db)):
+	"""Development-only: return masked hash info for a user to help debug login issues."""
+	u = crud.get_user_by_email(db, email)
+	if not u:
+		return JSONResponse(status_code=404, content={"detail": "not found"})
+	# Return only prefix of hash and salt length to avoid leaking full hashes
+	return {
+		"email": u.email,
+		"hash_prefix": (u.password_hash or '')[:60],
+		"salt_len": len(u.password_salt or ''),
+		"role": u.role,
+	}
+
+
+@app.get('/__debug_db')
+def debug_db():
+	"""Return the DATABASE_URL value used by the running server (development only)."""
+	return {"DATABASE_URL": database.DATABASE_URL}

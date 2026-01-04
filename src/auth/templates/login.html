@@ -58,6 +58,43 @@
 
       document.addEventListener('DOMContentLoaded', ()=>{
         const f = document.getElementById('signupForm');
+        const lf = document.getElementById('loginForm');
+        if(lf){
+          lf.addEventListener('submit', async (e)=>{
+            e.preventDefault();
+            const form = e.target;
+            const data = { email: form.email.value, password: form.password.value };
+            try{
+              const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              const txt = await res.text();
+              let json = null;
+              try{ json = JSON.parse(txt); }catch(err){ json = null }
+              if(!res.ok){
+                showResponse('Login error', json?.detail || txt || 'Unknown error');
+                return;
+              }
+              const token = json.access_token;
+              const role = json.role || '';
+              if(token){
+                localStorage.setItem('access_token', token);
+                // redirect based on role
+                if(role.toUpperCase().includes('ADMIN')){
+                  window.location.href = '/admin/dashboard';
+                }else{
+                  window.location.href = '/client/dashboard';
+                }
+              }else{
+                showResponse('Login', 'No access token returned');
+              }
+            }catch(error_){
+              showResponse('Network error', String(error_));
+            }
+          });
+        }
         if(f){
           f.addEventListener('submit', async (e)=>{
             e.preventDefault();
