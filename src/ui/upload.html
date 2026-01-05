@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Video Upload</title>
+    <title>Upload Vidéo - Moustass</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
@@ -12,43 +12,61 @@
 <body class="bg-light">
 
 <div class="container py-5">
-    <div class="row g-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="text-white mb-2">
+                <i class="fa-solid fa-film me-2"></i>Moustass Video Service
+            </h1>
+            <p class="text-white-50">Service de gestion et d'upload sécurisé de vidéos</p>
+        </div>
+    </div>
 
+    <div class="row g-4">
         <!-- Upload Form -->
         <div class="col-lg-5">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h4 class="mb-4">
-                        <i class="fa-solid fa-upload me-2"></i>Upload Video
+                        <i class="fa-solid fa-upload me-2"></i>Upload Vidéo
                     </h4>
 
-                    <form action="/upload" method="post" enctype="multipart/form-data">
+                    <form id="uploadForm">
                         <div class="mb-3">
-                            <label class="form-label">Video (.mp4 / .ts)</label>
-                            <input type="file" name="file" class="form-control" required>
+                            <label class="form-label">Vidéo (.mp4 / .ts)</label>
+                            <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.ts" required>
+                            <small class="text-muted">Taille max: 500MB</small>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Sender ID</label>
-                            <input type="text" name="sender_id" class="form-control" required>
+                            <label class="form-label">ID Expéditeur</label>
+                            <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="UUID ou ID utilisateur" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Receiver</label>
-                            <input type="text" name="receiver_id" class="form-control" value="ADMIN" required readonly>
+                            <label class="form-label">Destinataire</label>
+                            <input type="text" id="receiverId" name="receiver_id" class="form-control" value="ADMIN" required readonly>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Encrypted AES Key (RSA-3072)</label>
-                            <textarea name="encrypted_key" class="form-control" rows="3" required></textarea>
+                            <label class="form-label">Clé AES Chiffrée (RSA-3072)</label>
+                            <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="3" placeholder="Clé chiffrée en base64" required></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Amount</label>
-                            <input type="number" step="0.01" name="amount" class="form-control" required>
+                            <label class="form-label">Montant (EUR)</label>
+                            <input type="number" id="amount" name="amount" class="form-control" step="0.01" placeholder="0.00" required>
                         </div>
 
-                        <button class="btn btn-primary w-100">
+                        <!-- Progress -->
+                        <div id="progressContainer" class="mb-3 progress-container">
+                            <div class="progress">
+                                <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                            </div>
+                            <small id="progressText" class="text-muted"></small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
                             <i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload
                         </button>
                     </form>
@@ -60,38 +78,36 @@
         <div class="col-lg-7">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h4 class="mb-4">
-                        <i class="fa-solid fa-film me-2"></i>Uploaded Videos
-                    </h4>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4>
+                            <i class="fa-solid fa-film me-2"></i>Vidéos Uploadées
+                        </h4>
+                        <button class="btn btn-sm btn-outline-primary" id="refreshBtn">
+                            <i class="fa-solid fa-rotate-right me-1"></i>Actualiser
+                        </button>
+                    </div>
 
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Status</th>
-                            <th>Amount</th>
-                            <th>Expires</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 30%">ID</th>
+                                <th style="width: 15%">Statut</th>
+                                <th style="width: 20%">Montant</th>
+                                <th style="width: 25%">Expire</th>
+                                <th style="width: 10%">Actions</th>
+                            </tr>
+                            </thead>
 
-                        <tbody>
-                        <tr>
-                            <td class="small">a3f2...e91</td>
-                            <td><span class="badge bg-success">UPLOADED</span></td>
-                            <td>250.00</td>
-                            <td>2026-03-01</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary">
-                                    <i class="fa-solid fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                            <tbody id="videosList">
+                            <tr id="emptyState">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="fa-solid fa-inbox me-2"></i>Aucune vidéo uploadée
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
                 </div>
             </div>
@@ -100,5 +116,222 @@
     </div>
 </div>
 
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="loading">
+    <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API_BASE = 'http://localhost:8002/api/videos';
+
+    const escapeHTML = (value) => {
+        if (value === null || value === undefined) return '';
+        return String(value).replace(/[&<>'"`]/g, (c) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '`': '&#96;'
+        })[c] || c);
+    };
+
+    // Utilitaires
+    function showAlert(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-message alert-dismissible fade show`;
+        const textNode = document.createElement('span');
+        textNode.textContent = message;
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.setAttribute('data-bs-dismiss', 'alert');
+        alertDiv.appendChild(textNode);
+        alertDiv.appendChild(closeBtn);
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function truncateId(id) {
+        return id.substring(0, 8) + '...' + id.substring(id.length - 4);
+    }
+
+    function showLoading(show = true) {
+        const spinner = document.getElementById('loadingSpinner');
+        if (show) {
+            spinner.classList.add('active');
+        } else {
+            spinner.classList.remove('active');
+        }
+    }
+
+    // Upload Form
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(document.getElementById('uploadForm'));
+        const submitBtn = document.getElementById('submitBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        
+        submitBtn.disabled = true;
+        progressContainer.classList.add('active');
+        
+        try {
+            const response = await fetch(`${API_BASE}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur lors de l\'upload');
+            }
+            
+            const data = await response.json();
+            showAlert(`✅ Vidéo uploadée avec succès! ID: ${truncateId(data.video_id)}`, 'success');
+            
+            // Réinitialiser le formulaire
+            document.getElementById('uploadForm').reset();
+            progressContainer.classList.remove('active');
+            
+            // Actualiser la liste
+            await loadVideos();
+            
+        } catch (error) {
+            showAlert(`❌ Erreur: ${error.message}`, 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            progressContainer.classList.remove('active');
+        }
+    });
+
+    // Charger les vidéos
+    async function loadVideos() {
+        showLoading(true);
+        try {
+            const response = await fetch(`${API_BASE}/list`);
+            const videos = await response.json();
+
+            const tbody = document.getElementById('videosList');
+            const emptyState = document.getElementById('emptyState');
+
+            // Nettoie le tableau (mais conserve la référence de l'état vide)
+            tbody.innerHTML = '';
+
+            if (!videos.length) {
+                emptyState.style.display = 'table-row';
+                tbody.appendChild(emptyState);
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            videos.forEach((video) => {
+                const tr = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.className = 'id-cell';
+                idCell.textContent = truncateId(video.id || '');
+
+                const statusCell = document.createElement('td');
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = escapeHTML(video.status || '');
+                statusCell.appendChild(statusBadge);
+
+                const amountCell = document.createElement('td');
+                const amount = Number.parseFloat(video.amount ?? 0).toFixed(2);
+                amountCell.textContent = `€${amount}`;
+
+                const expiresCell = document.createElement('td');
+                expiresCell.textContent = formatDate(video.expires_at);
+
+                const actionsCell = document.createElement('td');
+
+                const viewBtn = document.createElement('button');
+                viewBtn.className = 'btn btn-sm btn-primary me-1';
+                viewBtn.title = 'Voir';
+                viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                viewBtn.addEventListener('click', () => viewVideo(video.id));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-danger';
+                deleteBtn.title = 'Supprimer';
+                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                deleteBtn.addEventListener('click', () => deleteVideo(video.id));
+
+                actionsCell.appendChild(viewBtn);
+                actionsCell.appendChild(deleteBtn);
+
+                tr.appendChild(idCell);
+                tr.appendChild(statusCell);
+                tr.appendChild(amountCell);
+                tr.appendChild(expiresCell);
+                tr.appendChild(actionsCell);
+
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            showAlert('Erreur lors du chargement des vidéos', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Voir les détails
+    async function viewVideo(videoId) {
+        try {
+            const response = await fetch(`${API_BASE}/${videoId}`);
+            const video = await response.json();
+            
+            alert(`Détails de la vidéo:\n\nID: ${video.id}\nExpéditeur: ${video.sender_id}\nMontant: €${parseFloat(video.amount).toFixed(2)}\nStatut: ${video.status}\nCréée: ${formatDate(video.created_at)}\nExpire: ${formatDate(video.expires_at)}`);
+        } catch (error) {
+            showAlert('Erreur lors de la récupération des détails', 'danger');
+        }
+    }
+
+    // Supprimer une vidéo
+    async function deleteVideo(videoId) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE}/${videoId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur lors de la suppression');
+            }
+            
+            showAlert('✅ Vidéo supprimée avec succès', 'success');
+            await loadVideos();
+        } catch (error) {
+            showAlert(`❌ Erreur: ${error.message}`, 'danger');
+        }
+    }
+
+    // Bouton actualiser
+    document.getElementById('refreshBtn').addEventListener('click', loadVideos);
+
+    // Charger les vidéos au démarrage
+    loadVideos();
+</script>
+
 </body>
 </html>
+
