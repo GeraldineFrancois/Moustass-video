@@ -9,13 +9,40 @@
   <body class="p-4">
     <div class="container">
       <h3>Client Dashboard</h3>
-      <div class="mb-3">
+      <div class="mb-3 d-flex gap-2">
         <button class="btn btn-danger" onclick="if(confirm('Supprimer le compte ?')) alert('Compte supprimé (demo)')">Supprimer mon compte</button>
         <button class="btn btn-secondary" onclick="alert('Déconnexion')">Se déconnecter</button>
       </div>
-      <div>
-        <p>Interface minimale client pour sprint.</p>
+      <div class="card p-3">
+        <h5>Vos clés</h5>
+        <div>
+          <label for="clientPublic" class="form-label">Clé publique</label>
+          <div class="d-flex gap-2 mb-2">
+            <button id="copyClientPublicBtn" class="btn btn-outline-secondary btn-sm">Copier la clé publique</button>
+          </div>
+          <textarea id="clientPublic" class="form-control" rows="6" readonly></textarea>
+        </div>
       </div>
+      <script>
+        async function fetchMyPublicKey(){
+          const token = localStorage.getItem('access_token');
+          if(!token) return;
+          try{
+            const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
+            if(!res.ok) return;
+            const j = await res.json();
+            document.getElementById('clientPublic').value = j.public_key || '';
+          }catch(e){ /* ignore network errors in UI */ }
+        }
+
+        document.addEventListener('DOMContentLoaded', ()=>{
+          fetchMyPublicKey();
+          document.getElementById('copyClientPublicBtn').addEventListener('click', async ()=>{
+            const ta = document.getElementById('clientPublic');
+            try{ await navigator.clipboard.writeText(ta.value); }catch(e){ ta.select(); }
+          });
+        });
+      </script>
     </div>
   </body>
 </html>
