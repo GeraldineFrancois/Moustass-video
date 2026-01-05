@@ -1,12 +1,14 @@
 #folders
 .idea/
 .vscode/
+.vscode/settings.json
 
 #python
 __pycache__/
 
 #environment
 .env
+**/.env
 .virtualenv/
 
 #snyk

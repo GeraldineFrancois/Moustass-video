@@ -2,9 +2,9 @@ name: Snyk Security (Python)
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "preprod"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "preprod"]
 
 permissions:
   contents: read
