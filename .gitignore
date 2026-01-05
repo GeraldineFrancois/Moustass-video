@@ -1,7 +1,6 @@
 #folders
 .idea/
 .vscode/
-uploads/
 .vscode/settings.json
 
 #python
@@ -14,5 +13,6 @@ __pycache__/
 
 #snyk
 .github/instructions/snyk_rules.instructions.md
+
 uploads/
-uploads/
+
