@@ -1,7 +1,9 @@
 name: Build
 on:
   push:
-    branches: [ main , preprod ]
+    branches:
+      - main
+      - preprod
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
