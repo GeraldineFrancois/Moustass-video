@@ -1,13 +1,18 @@
 #folders
 .idea/
 .vscode/
+uploads/
+.vscode/settings.json
 
 #python
 __pycache__/
 
 #environment
 .env
+**/.env
 .virtualenv/
 
 #snyk
 .github/instructions/snyk_rules.instructions.md
+uploads/
+uploads/

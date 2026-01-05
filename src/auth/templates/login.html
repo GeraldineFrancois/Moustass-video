@@ -25,7 +25,7 @@
             </form>
             <hr>
             <div>
-              <a href="#" onclick="showSignup('admin')">Créer un admin</a> | <a href="#" onclick="showSignup('client')">Créer un client</a>
+              <a href="#" onclick="showSignup('client')">Créer un client</a>
             </div>
             <div id="signup" class="mt-3" style="display:none">
               <form id="signupForm" method="post">
@@ -38,12 +38,21 @@
                 <button class="btn btn-success">Créer</button>
               </form>
               <div id="responseBox" class="mt-2" style="display:none">
-                <label for="responseText" id="responseTitle" class="form-label">Réponse</label>
-                <div class="input-group">
-                  <textarea id="responseText" class="form-control" rows="8" readonly></textarea>
-                  <button id="copyResponse" class="btn btn-outline-secondary" type="button">Copier</button>
+                <div class="mb-2">
+                  <label for="privateKeyText" id="responseTitle" class="form-label">Clé privée</label>
+                  <div class="input-group">
+                    <textarea id="privateKeyText" class="form-control" rows="6" readonly></textarea>
+                    <button id="copyPrivate" class="btn btn-outline-secondary" type="button">Copier</button>
+                  </div>
                 </div>
-                <div class="form-text">Le texte est sélectionnable — copiez et sauvegardez la clé privée immédiatement.</div>
+                <div class="mb-2">
+                  <label for="publicKeyText" class="form-label">Clé publique</label>
+                  <div class="input-group">
+                    <textarea id="publicKeyText" class="form-control" rows="6" readonly></textarea>
+                    <button id="copyPublic" class="btn btn-outline-secondary" type="button">Copier</button>
+                  </div>
+                </div>
+                <div class="form-text">Copiez et sauvegardez les clés privées/publiques. La clé privée ne sera pas stockée par le serveur.</div>
               </div>
             </div>
           </div>
@@ -137,7 +146,9 @@
               }
               const pk = json.private_key || json.privateKey || '';
               if(pk){
-                showResponse('Clé privée', pk);
+                // show both private and public keys when available
+                const pub = (json.user && json.user.public_key) ? json.user.public_key : '';
+                showResponseKeys(pk, pub);
               } else {
                 showResponse('Succès', JSON.stringify(json));
               }
@@ -151,22 +162,24 @@
 
       function showResponse(title, text){
         const box = document.getElementById('responseBox');
-        document.getElementById('responseTitle').textContent = title;
-        const ta = document.getElementById('responseText');
+        const ta = document.getElementById('privateKeyText');
         ta.value = text;
         box.style.display = 'block';
-        // enable copy button
-        const copyBtn = document.getElementById('copyResponse');
-        copyBtn.onclick = async ()=>{
-          try{
-            await navigator.clipboard.writeText(ta.value);
-            copyBtn.textContent = 'Copié';
-            setTimeout(()=> copyBtn.textContent = 'Copier', 2000);
-          }catch(error_){
-            console.error('Clipboard error:', error_);
-            // fallback: select textarea so user can Cmd+C
-            ta.select();
-          }
+      }
+
+      function showResponseKeys(privateKey, publicKey){
+        const box = document.getElementById('responseBox');
+        document.getElementById('privateKeyText').value = privateKey || '';
+        document.getElementById('publicKeyText').value = publicKey || '';
+        box.style.display = 'block';
+
+        document.getElementById('copyPrivate').onclick = async ()=>{
+          const ta = document.getElementById('privateKeyText');
+          try{ await navigator.clipboard.writeText(ta.value); document.getElementById('copyPrivate').textContent='Copié'; setTimeout(()=>document.getElementById('copyPrivate').textContent='Copier',2000);}catch(e){ ta.select(); }
+        };
+        document.getElementById('copyPublic').onclick = async ()=>{
+          const ta = document.getElementById('publicKeyText');
+          try{ await navigator.clipboard.writeText(ta.value); document.getElementById('copyPublic').textContent='Copié'; setTimeout(()=>document.getElementById('copyPublic').textContent='Copier',2000);}catch(e){ ta.select(); }
         };
       }
     </script>

@@ -223,3 +223,24 @@ def debug_user(email: str, db: Session = Depends(get_db)):
 def debug_db():
 	"""Return the DATABASE_URL value used by the running server (development only)."""
 	return {"DATABASE_URL": database.DATABASE_URL}
+
+
+@app.get('/me')
+def me(request: Request, db: Session = Depends(get_db)):
+	"""Return current user's public info based on Bearer token in Authorization header.
+
+	Development helper used by dashboards to fetch the authenticated user's
+	public key and email. Returns 401 if token missing/invalid.
+	"""
+	auth = request.headers.get('authorization', '')
+	if not auth.lower().startswith('bearer '):
+		raise HTTPException(status_code=401, detail='Missing bearer token')
+	token = auth.split(' ', 1)[1]
+	payload = security.decode_access_token(token)
+	if not payload:
+		raise HTTPException(status_code=401, detail='Invalid token')
+	email = payload.get('sub')
+	u = crud.get_user_by_email(db, email)
+	if not u:
+		raise HTTPException(status_code=404, detail='User not found')
+	return {'email': u.email, 'public_key': u.public_key, 'role': u.role}
