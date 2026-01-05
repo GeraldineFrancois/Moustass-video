@@ -8,6 +8,7 @@ __pycache__/
 
 #environment
 .env
+**/.env
 .virtualenv/
 
 #snyk
