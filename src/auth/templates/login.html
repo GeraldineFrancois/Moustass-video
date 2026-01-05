@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Login</title>
+  </head>
+  <body class="bg-light">
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card p-4">
+            <h3 class="card-title">Connexion</h3>
+            <form id="loginForm" method="post" action="/login">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Mot de passe</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+              </div>
+              <button class="btn btn-primary" type="submit">Se connecter</button>
+            </form>
+            <hr>
+            <div>
+              <a href="#" onclick="showSignup('client')">Créer un client</a>
+            </div>
+            <div id="signup" class="mt-3" style="display:none">
+              <form id="signupForm" method="post">
+                <input type="hidden" id="role" name="role" value="client">
+                <div class="mb-2"><input class="form-control" name="firstname" placeholder="Prénom" required></div>
+                <div class="mb-2"><input class="form-control" name="lastname" placeholder="Nom" required></div>
+                <div class="mb-2"><input class="form-control" name="email" placeholder="Email" required autocomplete="email"></div>
+                <div class="mb-2"><input class="form-control" type="password" name="password" placeholder="Mot de passe" required autocomplete="new-password"></div>
+                <div class="mb-2"><input class="form-control" type="password" name="confirm_password" placeholder="Confirmer mot de passe" required autocomplete="new-password"></div>
+                <button class="btn btn-success">Créer</button>
+              </form>
+              <div id="responseBox" class="mt-2" style="display:none">
+                <div class="mb-2">
+                  <label for="privateKeyText" id="responseTitle" class="form-label">Clé privée</label>
+                  <div class="input-group">
+                    <textarea id="privateKeyText" class="form-control" rows="6" readonly></textarea>
+                    <button id="copyPrivate" class="btn btn-outline-secondary" type="button">Copier</button>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label for="publicKeyText" class="form-label">Clé publique</label>
+                  <div class="input-group">
+                    <textarea id="publicKeyText" class="form-control" rows="6" readonly></textarea>
+                    <button id="copyPublic" class="btn btn-outline-secondary" type="button">Copier</button>
+                  </div>
+                </div>
+                <div class="form-text">Copiez et sauvegardez les clés privées/publiques. La clé privée ne sera pas stockée par le serveur.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      function showSignup(role){
+        document.getElementById('signup').style.display='block';
+        document.getElementById('role').value = role;
+      }
+
+      document.addEventListener('DOMContentLoaded', ()=>{
+        const f = document.getElementById('signupForm');
+        const lf = document.getElementById('loginForm');
+        if(lf){
+          lf.addEventListener('submit', async (e)=>{
+            e.preventDefault();
+            const form = e.target;
+            const data = { email: form.email.value, password: form.password.value };
+            try{
+              const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              const txt = await res.text();
+              let json = null;
+              try{ json = JSON.parse(txt); }catch(err){ json = null }
+              if(!res.ok){
+                showResponse('Login error', json?.detail || txt || 'Unknown error');
+                return;
+              }
+              const token = json.access_token;
+              const role = json.role || '';
+              if(token){
+                localStorage.setItem('access_token', token);
+                // redirect based on role
+                if(role.toUpperCase().includes('ADMIN')){
+                  window.location.href = '/admin/dashboard';
+                }else{
+                  window.location.href = '/client/dashboard';
+                }
+              }else{
+                showResponse('Login', 'No access token returned');
+              }
+            }catch(error_){
+              showResponse('Network error', String(error_));
+            }
+          });
+        }
+        if(f){
+          f.addEventListener('submit', async (e)=>{
+            e.preventDefault();
+            const form = e.target;
+            const role = document.getElementById('role').value === 'admin' ? 'admin' : 'client';
+            const endpoint = role === 'admin' ? '/signup_admin' : '/signup_client';
+            const data = {
+              firstname: form.firstname.value,
+              lastname: form.lastname.value,
+              email: form.email.value,
+              password: form.password.value,
+              confirm_password: form.confirm_password.value
+            };
+            try{
+              const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              // read body once as text, then try parse JSON
+              const txt = await res.text();
+              let json = null;
+              try{
+                json = JSON.parse(txt);
+              }catch(error_){
+                // Non-JSON response from server
+                console.error('JSON parse error:', error_);
+                if(!res.ok){
+                  showResponse('Erreur serveur', txt);
+                  console.error('Server error response (non-JSON):', txt);
+                  return;
+                }
+                showResponse('Réponse inattendue', txt);
+                return;
+              }
+              if(!res.ok){
+                const msg = json.detail || json.message || JSON.stringify(json);
+                showResponse('Erreur', msg);
+                return;
+              }
+              const pk = json.private_key || json.privateKey || '';
+              if(pk){
+                // show both private and public keys when available
+                const pub = (json.user && json.user.public_key) ? json.user.public_key : '';
+                showResponseKeys(pk, pub);
+              } else {
+                showResponse('Succès', JSON.stringify(json));
+              }
+            }catch(error_){
+              console.error('Network error:', error_);
+              showResponse('Erreur réseau', String(error_));
+            }
+          });
+        }
+      });
+
+      function showResponse(title, text){
+        const box = document.getElementById('responseBox');
+        const ta = document.getElementById('privateKeyText');
+        ta.value = text;
+        box.style.display = 'block';
+      }
+
+      function showResponseKeys(privateKey, publicKey){
+        const box = document.getElementById('responseBox');
+        document.getElementById('privateKeyText').value = privateKey || '';
+        document.getElementById('publicKeyText').value = publicKey || '';
+        box.style.display = 'block';
+
+        document.getElementById('copyPrivate').onclick = async ()=>{
+          const ta = document.getElementById('privateKeyText');
+          try{ await navigator.clipboard.writeText(ta.value); document.getElementById('copyPrivate').textContent='Copié'; setTimeout(()=>document.getElementById('copyPrivate').textContent='Copier',2000);}catch(e){ ta.select(); }
+        };
+        document.getElementById('copyPublic').onclick = async ()=>{
+          const ta = document.getElementById('publicKeyText');
+          try{ await navigator.clipboard.writeText(ta.value); document.getElementById('copyPublic').textContent='Copié'; setTimeout(()=>document.getElementById('copyPublic').textContent='Copier',2000);}catch(e){ ta.select(); }
+        };
+      }
+    </script>
+  </body>
+</html>
