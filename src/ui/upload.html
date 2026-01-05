@@ -128,25 +128,41 @@
 <script>
     const API_BASE = 'http://localhost:8002/api/videos';
 
+    const escapeHTML = (value) => {
+        if (value === null || value === undefined) return '';
+        return String(value).replace(/[&<>'"`]/g, (c) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '`': '&#96;'
+        })[c] || c);
+    };
+
     // Utilitaires
     function showAlert(message, type = 'success') {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-message alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+        const textNode = document.createElement('span');
+        textNode.textContent = message;
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.setAttribute('data-bs-dismiss', 'alert');
+        alertDiv.appendChild(textNode);
+        alertDiv.appendChild(closeBtn);
         document.body.appendChild(alertDiv);
-        
         setTimeout(() => alertDiv.remove(), 5000);
     }
 
     function formatDate(dateString) {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        return date.toLocaleDateString('fr-FR', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
+        return date.toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     }
 
@@ -208,32 +224,66 @@
         try {
             const response = await fetch(`${API_BASE}/list`);
             const videos = await response.json();
-            
+
             const tbody = document.getElementById('videosList');
             const emptyState = document.getElementById('emptyState');
-            
-            if (videos.length === 0) {
+
+            // Nettoie le tableau (mais conserve la référence de l'état vide)
+            tbody.innerHTML = '';
+
+            if (!videos.length) {
                 emptyState.style.display = 'table-row';
-                tbody.innerHTML = '';
-            } else {
-                emptyState.style.display = 'none';
-                tbody.innerHTML = videos.map(video => `
-                    <tr>
-                        <td class="id-cell">${truncateId(video.id)}</td>
-                        <td><span class="badge bg-success">${video.status}</span></td>
-                        <td>€${parseFloat(video.amount).toFixed(2)}</td>
-                        <td>${formatDate(video.expires_at)}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" title="Voir" onclick="viewVideo('${video.id}')">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" title="Supprimer" onclick="deleteVideo('${video.id}')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+                tbody.appendChild(emptyState);
+                return;
             }
+
+            emptyState.style.display = 'none';
+
+            videos.forEach((video) => {
+                const tr = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.className = 'id-cell';
+                idCell.textContent = truncateId(video.id || '');
+
+                const statusCell = document.createElement('td');
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = escapeHTML(video.status || '');
+                statusCell.appendChild(statusBadge);
+
+                const amountCell = document.createElement('td');
+                const amount = Number.parseFloat(video.amount ?? 0).toFixed(2);
+                amountCell.textContent = `€${amount}`;
+
+                const expiresCell = document.createElement('td');
+                expiresCell.textContent = formatDate(video.expires_at);
+
+                const actionsCell = document.createElement('td');
+
+                const viewBtn = document.createElement('button');
+                viewBtn.className = 'btn btn-sm btn-primary me-1';
+                viewBtn.title = 'Voir';
+                viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                viewBtn.addEventListener('click', () => viewVideo(video.id));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-danger';
+                deleteBtn.title = 'Supprimer';
+                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                deleteBtn.addEventListener('click', () => deleteVideo(video.id));
+
+                actionsCell.appendChild(viewBtn);
+                actionsCell.appendChild(deleteBtn);
+
+                tr.appendChild(idCell);
+                tr.appendChild(statusCell);
+                tr.appendChild(amountCell);
+                tr.appendChild(expiresCell);
+                tr.appendChild(actionsCell);
+
+                tbody.appendChild(tr);
+            });
         } catch (error) {
             showAlert('Erreur lors du chargement des vidéos', 'danger');
         } finally {

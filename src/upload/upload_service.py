@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 import os
-import shutil
+from pathlib import Path
 import aiofiles
 
 from upload.database import SessionLocal
@@ -12,8 +12,8 @@ from upload.models import Video
 
 app = FastAPI(title="Secure Video Upload API")
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR = Path("uploads").resolve()
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".mp4", ".ts"}
 
@@ -35,6 +35,13 @@ def validate_file(filename: str):
         )
     return ext
 
+
+def ensure_safe_path(target: Path) -> Path:
+    resolved = target.resolve()
+    if not str(resolved).startswith(str(UPLOAD_DIR)):
+        raise HTTPException(status_code=400, detail="Chemin de fichier invalide")
+    return resolved
+
 # ---------- Routes ----------
 @app.post("/upload")
 async def upload_video(
@@ -52,7 +59,7 @@ async def upload_video(
 
     video_id = str(uuid4())
     filename = f"{video_id}{ext}"
-    storage_path = os.path.join(UPLOAD_DIR, filename)
+    storage_path = ensure_safe_path(UPLOAD_DIR / filename)
 
     # Sauvegarde locale
     async with aiofiles.open(storage_path, "wb") as buffer:
@@ -64,7 +71,7 @@ async def upload_video(
         id=video_id,
         sender_id=sender_id,
         receiver_id=receiver_id,
-        storage_path=storage_path,
+        storage_path=str(storage_path),
         encrypted_key=encrypted_key,
         amount=amount,
         created_at=now,
@@ -124,12 +131,14 @@ async def download_video(video_id: str, db: Session = Depends(get_db)):
     if not video:
         raise HTTPException(status_code=404, detail="Vidéo non trouvée")
     
-    if not os.path.exists(video.storage_path):
+    safe_path = ensure_safe_path(Path(video.storage_path))
+
+    if not safe_path.exists():
         raise HTTPException(status_code=404, detail="Fichier vidéo non trouvé")
     
     return FileResponse(
-        path=video.storage_path,
-        filename=os.path.basename(video.storage_path),
+        path=safe_path,
+        filename=safe_path.name,
         media_type="video/mp4"
     )
 
@@ -142,8 +151,9 @@ async def delete_video(video_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Vidéo non trouvée")
     
     # Supprime le fichier
-    if os.path.exists(video.storage_path):
-        os.remove(video.storage_path)
+    safe_path = ensure_safe_path(Path(video.storage_path))
+    if safe_path.exists():
+        safe_path.unlink()
     
     # Supprime la base de données
     db.delete(video)
