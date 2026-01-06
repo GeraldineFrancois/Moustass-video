@@ -1,53 +1,431 @@
-# Moustass-video
-Messagerie vidéo confidentielle et authentique
+# 🎬 Moustass Video - Microservice de Gestion Vidéo
 
-## Requirements
-- Python version : 3.8 or higher
-- Install all required modules
+**Messagerie vidéo sécurisée, chiffrée et authentifiée avec architecture microservice.**
 
-***1- Create an virtual environment***
-# 🎬 Moustass Video - Service de Upload Sécurisé
+---
 
-Messagerie vidéo confidentielle et authentique avec chiffrement RSA-3072 et stockage sécurisé.
+## 📋 Table des Matières
+
+1. [Vue d'ensemble](#-vue-densemble)
+2. [Architecture](#-architecture)
+3. [Démarrage rapide](#-démarrage-rapide)
+4. [Documentation](#-documentation)
+5. [API](#-api)
+6. [Sécurité](#-sécurité)
+7. [Dépannage](#-dépannage)
+
+---
 
 ## 🎯 Vue d'ensemble
 
-Ce projet implémente une **architecture microservice** avec:
-- **Service d'authentification** (`src/auth/`)
-- **Service d'upload vidéo** (`src/upload/`) ← LE SERVICE PRINCIPAL
-- **Service de sécurité** (`src/security/`)
+**Moustass Video** est un microservice production-ready qui gère:
 
-### Focus: Service Upload Vidéo
+✅ **Upload sécurisé** de vidéos (.mp4, .ts)  
+✅ **Gestion complète** via API REST (8+ endpoints)  
+✅ **Interface web** interactive pour upload/download  
+✅ **Chiffrement** RSA-3072 + métadonnées  
+✅ **Expiration automatique** après 60 jours  
+✅ **Architecture modulaire** avec 4 composants  
+✅ **Sécurité** (anti-traversal, anti-XSS)  
+✅ **Performance** avec async/await et MySQL  
 
-Le service Upload permet:
-- ✅ Upload de vidéos sécurisées (.mp4, .ts)
-- ✅ Chiffrement AES avec support RSA-3072
-- ✅ Gestion complète avec API REST
-- ✅ Interface web interactive
-- ✅ Base de données MySQL
-- ✅ Expiration automatique (60 jours)
+### Structure du projet
+
+```
+moustass_video/
+├── src/
+│   ├── auth/                    # Service d'authentification
+│   ├── security/               # Service de sécurité
+│   └── videos/                 # SERVICE PRINCIPAL
+│       ├── main_upload.py       # Point d'entrée
+│       ├── upload_service.py    # Orchestrateur
+│       ├── upload_api.py        # Controller (9 endpoints)
+│       ├── storage_manager.py   # Composant 1: Fichiers
+│       ├── metadata_mapper.py   # Composant 2: BD
+│       ├── expiration_engine.py # Composant 3: Lifecycle
+│       ├── models.py            # ORM Video
+│       ├── database.py          # MySQL config
+│       ├── ARCHITECTURE.md      # Détail des 4 composants
+│       └── ...
+│   └── ui/
+│       └── upload.html          # Interface web
+├── TEST_SERVICE.md              # 50+ tests manuels
+├── MICROSERVICE_DIAGRAM.md      # Diagrammes ASCII
+├── MICROSERVICE_SUMMARY.md      # Résumé complet
+├── DEPLOYMENT_GUIDE.md          # Déploiement (3 options)
+├── requirements.txt             # Dépendances
+└── docker-compose.yml           # Docker
+```
+
+---
+
+## 🏗️ Architecture
+
+### 4 Composants Principaux
+
+```
+┌─────────────────────────────────────────┐
+│  API Controller (upload_api.py)         │
+│  9 endpoints: POST/GET/DELETE/...       │
+└────────────┬────────────────────────────┘
+             ↓
+┌──────────────────┬────────────────┬──────────────┐
+│ Storage Manager  │ Metadata Map.  │ Expiration   │
+│ (storage_...)    │ (metadata_...) │ Engine       │
+│                  │                │              │
+│ • Fichiers async │ • ORM SQLAlch. │ • Nettoyage  │
+│ • Sécurité path  │ • CRUD         │  • Lifecycle │
+│ • Validation     │ • Enum status  │  * Scheduler │
+└──────────┬───────┴────────┬───────┴──────┬───────┘
+           ↓                ↓               ↓
+    uploads/         MySQL videos_db    Retention logic
+```
+
+**Lire**: [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md) pour détails complets
+
+---
 
 ## 🚀 Démarrage rapide
 
-### Option 1: Démarrage local
+### Option 1️⃣: Local (Développement)
 
 ```bash
-# 1. Créer un environnement virtuel
-python -m venv .virtualenv
+# 1. Prérequis
+python --version      # 3.11+
+mysql --version       # 8.0+
 
-# Windows
-.virtualenv\Scripts\activate
-# Linux/Mac
-source .virtualenv/bin/activate
+# 2. Venv
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
 
-# 2. Installer les dépendances
+# 3. Dépendances
 pip install -r requirements.txt
 
-# 3. Configurer la base de données
-# Éditer src/upload/database.py avec vos paramètres MySQL
-# Puis exécuter init_database.sql
+# 4. Base de données
+mysql -u root -pMyStrongP@ss123! -e "CREATE DATABASE IF NOT EXISTS videos_db;"
+mysql -u root -pMyStrongP@ss123! videos_db < src/videos/init_database.sql
 
-# 4. Lancer le service
+# 5. Lancer
+cd src/videos
+python main_upload.py
+
+# ✅ Ouvrir: http://localhost:8002
+```
+
+### Option 2️⃣: Docker Compose
+
+```bash
+cd src/videos
+docker-compose up -d
+
+# ✅ Ouvrir: http://localhost:8002
+```
+
+### Option 3️⃣: Production (Nginx + Gunicorn)
+
+**Lire**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) (3 options détaillées)
+
+---
+
+## 📚 Documentation
+
+### Fichiers Essentiels
+
+| Fichier | Contenu |
+|---------|---------|
+| [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md) | 4 composants + flux détaillés |
+| [TEST_SERVICE.md](./TEST_SERVICE.md) | 50+ cas de test + cURL |
+| [MICROSERVICE_DIAGRAM.md](./MICROSERVICE_DIAGRAM.md) | Diagrammes ASCII + flux |
+| [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | Local / Docker / Production |
+| [MICROSERVICE_SUMMARY.md](./MICROSERVICE_SUMMARY.md) | Résumé complet du projet |
+
+### Accéder à l'API
+
+```bash
+# Interface web
+http://localhost:8002
+
+# Swagger (interactif)
+http://localhost:8002/docs
+
+# ReDoc
+http://localhost:8002/redoc
+
+# OpenAPI JSON
+http://localhost:8002/openapi.json
+```
+
+---
+
+## 📡 API
+
+### Endpoints Disponibles
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| **POST** | `/api/videos/upload` | Uploader une vidéo |
+| **GET** | `/api/videos` | Lister les vidéos (paginated) |
+| **GET** | `/api/videos/{id}` | Infos d'une vidéo |
+| **GET** | `/api/videos/{id}/download` | Télécharger le fichier |
+| **DELETE** | `/api/videos/{id}` | Supprimer vidéo |
+| **GET** | `/api/videos/{id}/retention` | Infos d'expiration |
+| **POST** | `/api/videos/{id}/extend-retention` | Prolonger durée |
+| **POST** | `/api/videos/maintenance/cleanup-expired` | Nettoyage manuel |
+| **GET** | `/health` | Status du service |
+
+### Exemple cURL
+
+```bash
+# Upload
+curl -X POST "http://localhost:8002/api/videos/upload" \
+  -F "file=@video.mp4" \
+  -F "sender_id=alice" \
+  -F "receiver_id=bob" \
+  -F "encrypted_key=xxx" \
+  -F "amount=100.00"
+
+# Lister
+curl "http://localhost:8002/api/videos?skip=0&limit=10"
+
+# Télécharger
+curl "http://localhost:8002/api/videos/UUID/download" --output video.mp4
+
+# Supprimer
+curl -X DELETE "http://localhost:8002/api/videos/UUID"
+```
+
+**Plus d'exemples**: [TEST_SERVICE.md](./TEST_SERVICE.md)
+
+---
+
+## 🔐 Sécurité
+
+### Protections Implémentées
+
+✅ **Path Traversal Prevention**
+```python
+# Valide que le chemin reste dans uploads/
+resolved = target.resolve()
+if not str(resolved).startswith(str(UPLOAD_DIR)):
+    raise HTTPException(status_code=400)
+```
+
+✅ **DOM-based XSS Prevention**
+```javascript
+// Utilise textContent au lieu de innerHTML
+td.textContent = video.status;  // Safe
+```
+
+✅ **Input Validation**
+- Format fichier: Whitelist .mp4/.ts
+- UUID: Validation format
+- Metadata: Type checking SQLAlchemy
+- File size: Config-based (future)
+
+✅ **SQL Injection Prevention**
+- ORM SQLAlchemy (parameterized queries)
+- Pas de string concatenation
+
+✅ **HTTPS Prêt**
+- Nginx reverse proxy (TLS)
+- Gunicorn + Uvicorn (production)
+
+---
+
+## ⚙️ Configuration
+
+### Variables d'environnement
+
+```bash
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=MyStrongP@ss123!
+DB_NAME=videos_db
+
+# Service
+UPLOAD_DIR=uploads
+SERVICE_PORT=8002
+
+# Optionnel
+EXPIRATION_DAYS=60
+LOG_LEVEL=info
+```
+
+### Fichiers de config
+
+```bash
+# src/videos/database.py
+DATABASE_URL = "mysql+pymysql://root:MyStrongP%40ss123%21@localhost/videos_db"
+
+# src/videos/main_upload.py
+uvicorn.run(app, host="0.0.0.0", port=8002)
+```
+
+---
+
+## 🧪 Tests
+
+### Tests Manuels
+
+**Voir**: [TEST_SERVICE.md](./TEST_SERVICE.md) pour:
+- 10+ curl examples
+- Interface web testing
+- Error cases
+- Performance tests
+- Database verification
+
+### Exécution rapide
+
+```bash
+# Santé
+curl http://localhost:8002/health
+
+# Liste vidéos
+curl http://localhost:8002/api/videos
+
+# Swagger
+open http://localhost:8002/docs
+```
+
+---
+
+## 📊 Monitoring
+
+### Logs du service
+
+```bash
+# Local
+tail -f <output>
+
+# Docker
+docker-compose logs -f api
+
+# Systemd
+sudo journalctl -u moustass-video -f
+```
+
+### Health check
+
+```bash
+# Simple
+curl http://localhost:8002/health
+
+# Complet
+curl http://localhost:8002/api/videos/maintenance/health-detailed
+```
+
+### Base de données
+
+```bash
+# Stats vidéos
+mysql -u root -pMyStrongP@ss123! videos_db \
+  -e "SELECT COUNT(*), status FROM videos GROUP BY status;"
+
+# Vidéos expirées
+mysql -u root -pMyStrongP@ss123! videos_db \
+  -e "SELECT id, expires_at FROM videos WHERE expires_at < NOW();"
+```
+
+---
+
+## 🐛 Dépannage
+
+### Service ne démarre pas
+
+```bash
+# 1. Vérifier Python
+python3 -c "import fastapi; print('OK')"
+
+# 2. Vérifier MySQL
+mysql -u root -pMyStrongP@ss123! -e "SELECT 1;"
+
+# 3. Lancer avec debug
+cd src/videos
+python main_upload.py 2>&1 | head -50
+```
+
+### Erreur: "database connection refused"
+
+```bash
+# Vérifier MySQL
+sudo systemctl status mysql
+
+# Tester la connexion
+mysql -u root -pMyStrongP@ss123! -h localhost -e "SELECT 1;"
+
+# Vérifier le DATABASE_URL
+cat src/videos/database.py | grep DATABASE_URL
+```
+
+### Erreur: "Permission denied" uploads/
+
+```bash
+# Créer le répertoire
+mkdir -p uploads && chmod 755 uploads/
+
+# Vérifier propriété
+ls -ld uploads/
+```
+
+**Plus de help**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md#troubleshooting)
+
+---
+
+## 📈 Performance
+
+- **Async I/O**: aiofiles + asyncio (non-bloquant)
+- **Database**: MySQL pool + indexing
+- **Pagination**: skip/limit pour listes longues
+- **Caching**: Ready pour Redis (future)
+- **Scaling**: Docker + Kubernetes ready
+
+---
+
+## 🔄 Workflow Typique
+
+```
+1. User uploads video.mp4
+   ↓
+2. Controller valide format
+   ↓
+3. StorageManager sauvegarde fichier
+   ↓
+4. MetadataMapper crée enregistrement BD
+   ↓
+5. User télécharge → ExpirationEngine vérifie date
+   ↓
+6. Fichier expiré? → Cleanup automatique
+```
+
+---
+
+## 📝 Licence & Auteur
+
+**Projet**: Moustass Video Microservice  
+**Version**: 1.0.0  
+**Status**: ✅ Production-Ready  
+**Support**: Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)  
+
+---
+
+## 🚀 Prochaines Étapes
+
+1. ✅ **Démarrer le service** → `python main_upload.py`
+2. ✅ **Accéder interface** → http://localhost:8002
+3. ✅ **Lire ARCHITECTURE.md** → Comprendre les 4 composants
+4. ✅ **Tester API** → [TEST_SERVICE.md](./TEST_SERVICE.md)
+5. ✅ **Déployer** → [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+
+---
+
+**Questions?** Lire les docs ou vérifier les fichiers respectifs.  
+**Prêt à déployer?** Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)  
+**Besoin de détails?** Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)  
+
+🎉 **Merci d'utiliser Moustass Video!**
 python main_upload.py
 ```
 

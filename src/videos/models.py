@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Text, Enum, DECIMAL, TIMESTAMP
-from upload.database import Base
+from videos.database import Base
 import enum
 from datetime import datetime
 

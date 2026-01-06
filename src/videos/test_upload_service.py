@@ -12,8 +12,8 @@ import sys
 # Ajouter le chemin src
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from upload.upload_service import app, UPLOAD_DIR
-from upload.database import Base, engine
+from videos.upload_service import app, UPLOAD_DIR
+from videos.database import Base, engine
 
 # Créer les tables de test
 @pytest.fixture(scope="session", autouse=True)
