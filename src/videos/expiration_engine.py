@@ -5,8 +5,8 @@ Nettoie automatiquement les fichiers et métadonnées expirées
 
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
-from videos.models import Video, VideoStatus
-from videos.storage_manager import StorageManager
+from .models import Video, VideoStatus
+from .storage_manager import StorageManager
 import logging
 
 

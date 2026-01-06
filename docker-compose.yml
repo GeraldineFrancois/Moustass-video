@@ -1,0 +1,78 @@
+services:
+  # Service d'authentification
+  auth-service:
+    build:
+      context: .
+      dockerfile: src/auth/Dockerfile
+    container_name: moustass-auth-service
+    ports:
+      - "8001:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      DATABASE_URL: ${AUTH_DATABASE_URL:-sqlite:///./dev.db}
+    command: uvicorn src.auth.auth_api:app --host 0.0.0.0 --port 8000
+    networks:
+      - moustass-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Service vidéo
+  video-service:
+    build:
+      context: .
+      dockerfile: src/videos/Dockerfile
+    container_name: moustass-video-service
+    ports:
+      - "8002:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      DATABASE_URL: ${VIDEO_DATABASE_URL:-mysql+pymysql://video_user:video_password@mysql:3306/videos_db}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - videos-storage:/app/uploads
+    command: uvicorn src.videos.upload_service:app --host 0.0.0.0 --port 8000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - moustass-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Base de données MySQL pour les vidéos
+  mysql:
+    image: mysql:8.0
+    container_name: moustass-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: videos_db
+      MYSQL_USER: video_user
+      MYSQL_PASSWORD: video_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./src/videos/init_database.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - moustass-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  moustass-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  videos-storage:

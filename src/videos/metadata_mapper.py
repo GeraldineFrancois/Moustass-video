@@ -4,7 +4,7 @@ Enregistre et récupère les métadonnées des vidéos
 """
 
 from sqlalchemy.orm import Session
-from videos.models import Video, VideoStatus
+from .models import Video, VideoStatus
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from fastapi import HTTPException
@@ -24,6 +24,7 @@ class MetadataMapper:
     
     def create_video_record(
         self,
+        user_id: int,
         sender_id: str,
         receiver_id: str,
         storage_path: str,
@@ -35,6 +36,7 @@ class MetadataMapper:
         Crée un nouvel enregistrement vidéo en BD
         
         Args:
+            user_id: ID de l'utilisateur authentifié (propriétaire)
             sender_id: ID de l'expéditeur
             receiver_id: ID du destinataire
             storage_path: Chemin de stockage du fichier
@@ -51,6 +53,7 @@ class MetadataMapper:
         
         video = Video(
             id=video_id,
+            user_id=user_id,
             sender_id=sender_id,
             receiver_id=receiver_id,
             storage_path=storage_path,
@@ -214,11 +217,32 @@ class MetadataMapper:
         """
         return {
             "id": video.id,
+            "user_id": video.user_id,
             "sender_id": video.sender_id,
             "receiver_id": video.receiver_id,
             "storage_path": video.storage_path,
             "status": video.status.value,
+            "is_signed": video.is_signed,
             "amount": float(video.amount),
             "created_at": video.created_at.isoformat() if video.created_at else None,
             "expires_at": video.expires_at.isoformat() if video.expires_at else None,
         }
+    
+    def update_video_signature(self, video_id: str, signature: str) -> Video:
+        """
+        Met à jour la signature et le statut d'une vidéo
+        
+        Args:
+            video_id: UUID de la vidéo
+            signature: Signature B64 du hash du fichier
+            
+        Returns:
+            Vidéo mise à jour
+        """
+        video = self.get_video_by_id(video_id)
+        video.signature = signature
+        video.is_signed = True
+        video.status = VideoStatus.SIGNED
+        self.db.commit()
+        self.db.refresh(video)
+        return video

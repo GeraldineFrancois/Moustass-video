@@ -1,16 +1,20 @@
 """
 Upload & Download Controller - API REST
 Gère le flux binaire avec la webapp frontend
+Intégré avec le service d'authentification et de signature
 """
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Header
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from uuid import uuid4
-from videos.database import SessionLocal
-from videos.storage_manager import StorageManager
-from videos.metadata_mapper import MetadataMapper
-from videos.expiration_engine import ExpirationEngine
+from .database import SessionLocal
+from .storage_manager import StorageManager
+from .metadata_mapper import MetadataMapper
+from .expiration_engine import ExpirationEngine
+from .security import get_current_user, sign_data, verify_signature
+import hashlib
+import os
 
 
 # Configuration
@@ -41,15 +45,22 @@ async def upload_video(
     receiver_id: str = Form(...),
     encrypted_key: str = Form(...),
     amount: float = Form(...),
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint d'upload vidéo sécurisé
+    Endpoint d'upload vidéo sécurisé - AUTHENTIFICATION REQUISE
     
+    - Vérifie le JWT token de l'utilisateur
     - Valide le format du fichier
-    - Sauvegarde le binaire chiffré via Storage Manager
-    - Enregistre les métadonnées via Metadata Mapper
+    - Sauvegarde le binaire chiffré
+    - Enregistre les métadonnées avec user_id
+    
+    Une vidéo doit être signée avant d'être lue/téléchargée par d'autres
     """
+    # Vérifier l'authentification
+    user_id = get_current_user(authorization)
+    
     if not file:
         raise HTTPException(status_code=400, detail="Fichier manquant")
     
@@ -67,8 +78,9 @@ async def upload_video(
         video_id = str(uuid4())
         storage_path = await storage.save_video(video_id, ext, file_content)
         
-        # Enregistrer les métadonnées
+        # Enregistrer les métadonnées avec user_id
         video_record = metadata.create_video_record(
+            user_id=user_id,
             sender_id=sender_id,
             receiver_id=receiver_id,
             storage_path=str(storage_path),
@@ -78,13 +90,129 @@ async def upload_video(
         
         return {
             "video_id": video_record.id,
+            "user_id": user_id,
             "status": video_record.status.value,
-            "message": "Upload réussi"
+            "is_signed": video_record.is_signed,
+            "message": "Upload réussi. Signez la vidéo avant qu'elle soit accessible."
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur upload: {str(e)}")
+
+
+# ============================================================================
+# SIGNATURE CONTROLLER - Signer et vérifier les vidéos
+# ============================================================================
+
+@router.post("/{video_id}/sign")
+async def sign_video(
+    video_id: str,
+    private_key_pem: str = Form(...),
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Signe une vidéo avec la clé privée de l'utilisateur
+    
+    - Vérifie que l'utilisateur est propriétaire de la vidéo
+    - Signe le hash du fichier avec sa clé privée RSA
+    - Marque la vidéo comme signée (immutable)
+    - Après signature, la vidéo ne peut plus être modifiée
+    """
+    # Vérifier l'authentification
+    user_id = get_current_user(authorization)
+    
+    metadata = MetadataMapper(db)
+    
+    try:
+        video = metadata.get_video_by_id(video_id)
+        
+        # Vérifier que l'utilisateur est propriétaire
+        if video.user_id != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Vous ne pouvez signer que vos propres vidéos"
+            )
+        
+        # Vérifier si déjà signée
+        if video.is_signed:
+            raise HTTPException(
+                status_code=400,
+                detail="Cette vidéo est déjà signée et immuable"
+            )
+        
+        # Calculer le hash du fichier
+        file_content = await storage.read_video(video.storage_path)
+        file_hash = hashlib.sha256(file_content).digest()
+        
+        # Signer le hash
+        signature_b64 = sign_data(file_hash, private_key_pem)
+        
+        # Mettre à jour la vidéo
+        metadata.update_video_signature(video_id, signature_b64)
+        
+        return {
+            "video_id": video_id,
+            "status": "SIGNED",
+            "signature": signature_b64[:50] + "...",  # Afficher partiellement
+            "message": "Vidéo signée avec succès. Elle est maintenant immuable."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur signature: {str(e)}")
+
+
+@router.post("/{video_id}/verify-signature")
+async def verify_video_signature(
+    video_id: str,
+    public_key_pem: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Vérifie la signature d'une vidéo
+    
+    - Récupère le hash original du fichier
+    - Vérifie la signature avec la clé publique fournie
+    - Retourne True/False si la signature est valide
+    
+    Permet à quelqu'un d'autre de vérifier qu'une vidéo
+    vient bien d'un utilisateur spécifique
+    """
+    metadata = MetadataMapper(db)
+    
+    try:
+        video = metadata.get_video_by_id(video_id)
+        
+        # Vérifier si la vidéo est signée
+        if not video.is_signed or not video.signature:
+            raise HTTPException(
+                status_code=400,
+                detail="Cette vidéo n'a pas été signée"
+            )
+        
+        # Récupérer le contenu et calculer le hash
+        file_content = await storage.read_video(video.storage_path)
+        file_hash = hashlib.sha256(file_content).digest()
+        
+        # Vérifier la signature
+        is_valid = verify_signature(
+            file_hash,
+            video.signature,
+            public_key_pem
+        )
+        
+        return {
+            "video_id": video_id,
+            "is_valid": is_valid,
+            "signer": "unknown" if not is_valid else "verified",
+            "message": "Signature valide" if is_valid else "Signature invalide ou fichier modifié"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur vérification: {str(e)}")
 
 
 # ============================================================================
@@ -104,7 +232,6 @@ async def download_video(
     - Retourne le binaire au client
     """
     metadata = MetadataMapper(db)
-    expiration = ExpirationEngine(db, storage)
     
     try:
         # Récupérer les métadonnées
@@ -177,18 +304,37 @@ async def get_video_info(
 @router.delete("/{video_id}")
 async def delete_video(
     video_id: str,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """
     Supprime une vidéo (fichier + métadonnées)
     
-    - Supprime le fichier du stockage
-    - Supprime l'enregistrement de la BD
+    - Authentification requise
+    - Ne peut supprimer que si propriétaire
+    - Ne peut pas supprimer une vidéo signée (immuable)
     """
+    # Vérifier l'authentification
+    user_id = get_current_user(authorization)
+    
     metadata = MetadataMapper(db)
     
     try:
         video = metadata.get_video_by_id(video_id)
+        
+        # Vérifier que l'utilisateur est propriétaire
+        if video.user_id != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Vous ne pouvez supprimer que vos propres vidéos"
+            )
+        
+        # Empêcher la suppression de vidéos signées
+        if video.is_signed:
+            raise HTTPException(
+                status_code=403,
+                detail="Impossible de supprimer une vidéo signée (immuable)"
+            )
         
         # Supprimer le fichier
         await storage.delete_video(video.storage_path)

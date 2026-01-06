@@ -3,9 +3,20 @@ Upload Service - Coordonnateur de microservice vidéo
 Orchestre les composants: Storage Manager, Metadata Mapper, Expiration Engine
 """
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi.responses import FileResponse, HTMLResponse
 from pathlib import Path
+import aiofiles
+
+# ⚠️ Correction : importer Session de SQLAlchemy
+from sqlalchemy.orm import Session
+
+# Tes modules internes
+from auth.database import get_db
+from upload.upload_service import ensure_safe_path
+from videos.models import Video
+from .upload_api import router as upload_router
+from .database import Base, engine
 
 
 # ============================================================================
@@ -18,6 +29,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Créer les tables au démarrage
+Base.metadata.create_all(bind=engine)
+
+# Inclure les routes d'upload
+app.include_router(upload_router)
+
 
 # ============================================================================
 # ROUTES UI
@@ -29,8 +46,8 @@ async def root():
     html_path = Path(__file__).parent.parent / "ui" / "upload.html"
     
     if html_path.exists():
-        with open(html_path, "r", encoding="utf-8") as f:
-            return f.read()
+        async with aiofiles.open(html_path, "r", encoding="utf-8") as f:
+            return await f.read()
     else:
         return """
         <html>
@@ -88,13 +105,11 @@ async def startup_event():
 async def shutdown_event():
     """Événement à l'arrêt du service"""
     print("🎬 Service Vidéo - Arrêt en cours...")
-            "amount": float(v.amount),
-            "created_at": v.created_at.isoformat() if v.created_at else None,
-            "expires_at": v.expires_at.isoformat() if v.expires_at else None,
-        }
-        for v in videos
-    ]
 
+
+# ============================================================================
+# ROUTES VIDÉO
+# ============================================================================
 
 @app.get("/videos/{video_id}")
 async def get_video_info(video_id: str, db: Session = Depends(get_db)):
@@ -150,9 +165,3 @@ async def delete_video(video_id: str, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Vidéo supprimée avec succès"}
-
-
-@app.get("/health")
-async def health_check():
-    """Vérification de santé du service"""
-    return {"status": "healthy", "service": "upload-service"}
