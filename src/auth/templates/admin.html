@@ -45,10 +45,14 @@
         async function fetchMyPublicKey(){
           const token = localStorage.getItem('access_token');
           if(!token) return;
-          const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
-          if(!res.ok) return;
-          const j = await res.json();
-          document.getElementById('myPublicKey').value = j.public_key || '';
+          try{
+            const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
+            if(!res.ok) return;
+            const j = await res.json();
+            document.getElementById('myPublicKey').value = j.public_key || '';
+          }catch(e){
+            console.warn('fetchMyPublicKey failed', e);
+          }
         }
 
         document.addEventListener('DOMContentLoaded', ()=>{
@@ -56,7 +60,12 @@
 
           document.getElementById('copyPublicBtn').addEventListener('click', async ()=>{
             const ta = document.getElementById('myPublicKey');
-            try{ await navigator.clipboard.writeText(ta.value); }catch(e){ ta.select(); }
+            try{
+              await navigator.clipboard.writeText(ta.value);
+            }catch(e){
+              console.warn('clipboard write failed, falling back to select()', e);
+              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+            }
           });
 
           const form = document.getElementById('adminCreateForm');
@@ -67,7 +76,7 @@
             const res = await fetch('/signup_admin', { method:'POST', headers:{'Content-Type':'application/json', 'Authorization': token ? 'Bearer '+token : ''}, body: JSON.stringify(data) });
             const txt = await res.text();
             let json = {};
-            try{ json = JSON.parse(txt); }catch(e){ alert('Erreur: '+txt); return; }
+            try{ json = JSON.parse(txt); }catch(error_){ console.warn('Failed to parse /signup_admin response', error_, txt); alert('Erreur: '+txt); return; }
             if(!res.ok){ alert('Erreur: '+(json.detail||JSON.stringify(json))); return; }
             document.getElementById('adminPrivate').value = json.private_key || '';
             document.getElementById('adminPublic').value = (json.user && json.user.public_key) ? json.user.public_key : '';

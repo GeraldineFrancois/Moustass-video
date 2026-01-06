@@ -52,33 +52,34 @@ def _verify_and_migrate_password(user, plain_password: str, db: Session) -> bool
 	stored_hash = user.password_hash or ''
 	salt = user.password_salt or ''
 
-	# Try modern verification first (plain password)
-	try:
-		if stored_hash and security.verify_password(plain_password, stored_hash):
-			# already modern format
-			return True
-	except Exception:
-		pass
-
-	# Try legacy case: hash was made over password+salt
-	if salt:
+	def _safe_verify(candidate: str, hash_to_check: str) -> bool:
+		"""Call `security.verify_password` and return False on any error."""
 		try:
-			if security.verify_password(plain_password + salt, stored_hash):
-				_migrate_hash_if_needed(user, plain_password, db)
-				return True
+			return bool(hash_to_check) and security.verify_password(candidate, hash_to_check)
 		except Exception:
-			pass
+			return False
 
-	# Legacy appended-salt: stored_hash actually contains hash + salt appended
-	if salt and stored_hash.endswith(salt):
+	# 1) Modern format: password directly verifies against stored_hash
+	if _safe_verify(plain_password, stored_hash):
+		return True
+
+	# If there's no stored salt, remaining legacy checks are impossible
+	if not salt:
+		return False
+
+	# 2) Legacy: stored_hash is hash(password + salt)
+	if _safe_verify(plain_password + salt, stored_hash):
+		_migrate_hash_if_needed(user, plain_password, db)
+		return True
+
+	# 3) Legacy appended-salt: stored_hash == real_hash + salt
+	if stored_hash.endswith(salt):
 		real_hash = stored_hash[:-len(salt)]
-		try:
-			if security.verify_password(plain_password + salt, real_hash):
-				_migrate_hash_if_needed(user, plain_password, db)
-				return True
-		except Exception:
-			pass
+		if _safe_verify(plain_password + salt, real_hash):
+			_migrate_hash_if_needed(user, plain_password, db)
+			return True
 
+	# none matched
 	return False
 
 

@@ -2,6 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ENV PYTHONPATH=/app
+
 # Installer les dépendances système
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -19,12 +21,12 @@ COPY . .
 # Créer le dossier uploads
 RUN mkdir -p /app/uploads
 
-# Exposer le port
-EXPOSE 8002
+# Exposer le port interne
+EXPOSE 8000
 
-# Santé check
+# Santé check basique sur l'API vidéo
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8002/health || exit 1
+    CMD curl -f http://localhost:8000/api/videos/health/status || exit 1
 
-# Lancer l'application
-CMD ["python", "main_upload.py"]
+# Lancer le service FastAPI
+CMD ["uvicorn", "src.videos.upload_service:app", "--host", "0.0.0.0", "--port", "8000"]

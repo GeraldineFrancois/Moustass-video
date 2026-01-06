@@ -32,14 +32,22 @@
             if(!res.ok) return;
             const j = await res.json();
             document.getElementById('clientPublic').value = j.public_key || '';
-          }catch(e){ /* ignore network errors in UI */ }
+          }catch(e){
+            console.warn('fetchMyPublicKey failed', e);
+            // keep UI silent but log the error for diagnostics
+          }
         }
 
         document.addEventListener('DOMContentLoaded', ()=>{
           fetchMyPublicKey();
           document.getElementById('copyClientPublicBtn').addEventListener('click', async ()=>{
             const ta = document.getElementById('clientPublic');
-            try{ await navigator.clipboard.writeText(ta.value); }catch(e){ ta.select(); }
+            try{
+              await navigator.clipboard.writeText(ta.value);
+            }catch(e){
+              console.warn('clipboard write failed, falling back to select()', e);
+              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+            }
           });
         });
       </script>
