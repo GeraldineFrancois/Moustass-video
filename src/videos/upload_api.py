@@ -114,12 +114,19 @@ async def download_video(
         if video.status.value == "EXPIRED":
             raise HTTPException(status_code=410, detail="Vidéo expirée")
         
-        # Valider le chemin (prévention path traversal)
+        # Extraire l'extension du storage_path
+        import os
+        extension = os.path.splitext(video.storage_path)[1]
+        
+        # Reconstruire le chemin de manière sécurisée via StorageManager
+        # Ceci utilise la validation interne _ensure_safe_path()
         from pathlib import Path
-        safe_path = Path(video.storage_path).resolve()
-        upload_dir = Path(UPLOAD_DIR).resolve()
-        if not str(safe_path).startswith(str(upload_dir)):
-            raise HTTPException(status_code=400, detail="Chemin invalide")
+        safe_filename = f"{video_id}{extension}"
+        safe_path = storage._ensure_safe_path(storage.upload_dir / safe_filename)
+        
+        # Vérifier que le fichier existe
+        if not safe_path.exists():
+            raise HTTPException(status_code=404, detail="Fichier vidéo non trouvé")
         
         # Marquer comme téléchargée
         metadata.mark_as_downloaded(video_id)
@@ -127,7 +134,7 @@ async def download_video(
         # Retourner le fichier
         return FileResponse(
             path=str(safe_path),
-            filename=storage.get_filename(video.storage_path),
+            filename=safe_filename,
             media_type="video/mp4"
         )
     except HTTPException:
