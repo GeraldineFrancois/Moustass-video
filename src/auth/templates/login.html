@@ -12,29 +12,29 @@
         <div class="col-md-6">
           <div class="card p-4">
             <h3 class="card-title">Connexion</h3>
-            <form id="loginForm" method="post" action="/login">
+            <form id="loginForm" method="post" action="/login" autocomplete="on">
               <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+                <input type="email" class="form-control" id="email" name="email" required autocomplete="email">
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">Mot de passe</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
               </div>
               <button class="btn btn-primary" type="submit">Se connecter</button>
             </form>
             <hr>
             <div>
-              <a href="#" onclick="showSignup('client')">Créer un client</a>
+              <button type="button" class="btn btn-link p-0" onclick="showSignup('client')">Créer un client</button>
             </div>
             <div id="signup" class="mt-3" style="display:none">
-              <form id="signupForm" method="post">
+              <form id="signupForm" method="post" autocomplete="on">
                 <input type="hidden" id="role" name="role" value="client">
-                <div class="mb-2"><input class="form-control" name="firstname" placeholder="Prénom" required></div>
-                <div class="mb-2"><input class="form-control" name="lastname" placeholder="Nom" required></div>
-                <div class="mb-2"><input class="form-control" name="email" placeholder="Email" required autocomplete="email"></div>
-                <div class="mb-2"><input class="form-control" type="password" name="password" placeholder="Mot de passe" required autocomplete="new-password"></div>
-                <div class="mb-2"><input class="form-control" type="password" name="confirm_password" placeholder="Confirmer mot de passe" required autocomplete="new-password"></div>
+                <div class="mb-2"><input id="signupFirstname" class="form-control" name="firstname" placeholder="Prénom" required autocomplete="given-name"></div>
+                <div class="mb-2"><input id="signupLastname" class="form-control" name="lastname" placeholder="Nom" required autocomplete="family-name"></div>
+                <div class="mb-2"><input id="signupEmail" class="form-control" name="email" placeholder="Email" required autocomplete="email"></div>
+                <div class="mb-2"><input id="signupPassword" class="form-control" type="password" name="password" placeholder="Mot de passe" required autocomplete="new-password"></div>
+                <div class="mb-2"><input id="signupConfirm" class="form-control" type="password" name="confirm_password" placeholder="Confirmer mot de passe" required autocomplete="new-password"></div>
                 <button class="btn btn-success">Créer</button>
               </form>
               <div id="responseBox" class="mt-2" style="display:none">
@@ -73,15 +73,15 @@
             e.preventDefault();
             const form = e.target;
             const data = { email: form.email.value, password: form.password.value };
-            try{
-              const res = await fetch('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-              });
-              const txt = await res.text();
-              let json = null;
-              try{ json = JSON.parse(txt); }catch(err){ json = null }
+              try{
+                const res = await fetch('/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data)
+                });
+                const txt = await res.text();
+                let json = null;
+                try{ json = JSON.parse(txt); }catch(error_){ console.warn('Failed to parse /login response', error_, txt); json = null; }
               if(!res.ok){
                 showResponse('Login error', json?.detail || txt || 'Unknown error');
                 return;
@@ -92,9 +92,9 @@
                 localStorage.setItem('access_token', token);
                 // redirect based on role
                 if(role.toUpperCase().includes('ADMIN')){
-                  window.location.href = '/admin/dashboard';
+                  globalThis.location.href = '/admin/dashboard';
                 }else{
-                  window.location.href = '/client/dashboard';
+                  globalThis.location.href = '/client/dashboard';
                 }
               }else{
                 showResponse('Login', 'No access token returned');
@@ -175,11 +175,25 @@
 
         document.getElementById('copyPrivate').onclick = async ()=>{
           const ta = document.getElementById('privateKeyText');
-          try{ await navigator.clipboard.writeText(ta.value); document.getElementById('copyPrivate').textContent='Copié'; setTimeout(()=>document.getElementById('copyPrivate').textContent='Copier',2000);}catch(e){ ta.select(); }
+          try{
+            await navigator.clipboard.writeText(ta.value);
+            document.getElementById('copyPrivate').textContent='Copié';
+            setTimeout(()=>document.getElementById('copyPrivate').textContent='Copier',2000);
+          }catch(e){
+            console.warn('clipboard write failed for private key', e);
+            try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+          }
         };
         document.getElementById('copyPublic').onclick = async ()=>{
           const ta = document.getElementById('publicKeyText');
-          try{ await navigator.clipboard.writeText(ta.value); document.getElementById('copyPublic').textContent='Copié'; setTimeout(()=>document.getElementById('copyPublic').textContent='Copier',2000);}catch(e){ ta.select(); }
+          try{
+            await navigator.clipboard.writeText(ta.value);
+            document.getElementById('copyPublic').textContent='Copié';
+            setTimeout(()=>document.getElementById('copyPublic').textContent='Copier',2000);
+          }catch(e){
+            console.warn('clipboard write failed for public key', e);
+            try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+          }
         };
       }
     </script>

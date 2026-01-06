@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 from jose import jwt, JWTError
 
@@ -55,10 +55,12 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     The `exp` claim is added using `expires_delta` or the default lifetime.
     """
     to_encode = data.copy()
+    # Use timezone-aware UTC datetimes rather than naive `utcnow()`
+    now_utc = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now_utc + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRES_MINUTES)
+        expire = now_utc + timedelta(minutes=JWT_EXPIRES_MINUTES)
     to_encode.update({"exp": expire})
     encoded = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGO)
     return encoded

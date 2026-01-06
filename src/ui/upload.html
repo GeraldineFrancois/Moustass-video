@@ -33,28 +33,28 @@
 
                     <form id="uploadForm">
                         <div class="mb-3">
-                            <label class="form-label">Vidéo (.mp4 / .ts)</label>
+                            <label for="videoFile" class="form-label">Vidéo (.mp4 / .ts)</label>
                             <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.ts" required>
                             <small class="text-muted">Taille max: 500MB</small>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">ID Expéditeur</label>
+                            <label for="senderId" class="form-label">ID Expéditeur</label>
                             <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="UUID ou ID utilisateur" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Destinataire</label>
+                            <label for="receiverId" class="form-label">Destinataire</label>
                             <input type="text" id="receiverId" name="receiver_id" class="form-control" value="ADMIN" required readonly>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Clé AES Chiffrée (RSA-3072)</label>
+                            <label for="encryptedKey" class="form-label">Clé AES Chiffrée (RSA-3072)</label>
                             <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="3" placeholder="Clé chiffrée en base64" required></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Montant (EUR)</label>
+                            <label for="amount" class="form-label">Montant (EUR)</label>
                             <input type="number" id="amount" name="amount" class="form-control" step="0.01" placeholder="0.00" required>
                         </div>
 
@@ -149,7 +149,7 @@
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'btn-close';
-        closeBtn.setAttribute('data-bs-dismiss', 'alert');
+        closeBtn.dataset.bsDismiss = 'alert';
         alertDiv.appendChild(textNode);
         alertDiv.appendChild(closeBtn);
         document.body.appendChild(alertDiv);
@@ -182,34 +182,34 @@
     // Upload Form
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const formData = new FormData(document.getElementById('uploadForm'));
         const submitBtn = document.getElementById('submitBtn');
         const progressContainer = document.getElementById('progressContainer');
-        
+
         submitBtn.disabled = true;
         progressContainer.classList.add('active');
-        
+
         try {
             const response = await fetch(`${API_BASE}/upload`, {
                 method: 'POST',
                 body: formData
             });
-            
+
             if (!response.ok) {
                 throw new Error('Erreur lors de l\'upload');
             }
-            
+
             const data = await response.json();
             showAlert(`✅ Vidéo uploadée avec succès! ID: ${truncateId(data.video_id)}`, 'success');
-            
+
             // Réinitialiser le formulaire
             document.getElementById('uploadForm').reset();
             progressContainer.classList.remove('active');
-            
+
             // Actualiser la liste
             await loadVideos();
-            
+
         } catch (error) {
             showAlert(`❌ Erreur: ${error.message}`, 'danger');
         } finally {
@@ -296,7 +296,7 @@
         try {
             const response = await fetch(`${API_BASE}/${videoId}`);
             const video = await response.json();
-            
+
             alert(`Détails de la vidéo:\n\nID: ${video.id}\nExpéditeur: ${video.sender_id}\nMontant: €${parseFloat(video.amount).toFixed(2)}\nStatut: ${video.status}\nCréée: ${formatDate(video.created_at)}\nExpire: ${formatDate(video.expires_at)}`);
         } catch (error) {
             showAlert('Erreur lors de la récupération des détails', 'danger');
@@ -308,16 +308,16 @@
         if (!confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?')) {
             return;
         }
-        
+
         try {
             const response = await fetch(`${API_BASE}/${videoId}`, {
                 method: 'DELETE'
             });
-            
+
             if (!response.ok) {
                 throw new Error('Erreur lors de la suppression');
             }
-            
+
             showAlert('✅ Vidéo supprimée avec succès', 'success');
             await loadVideos();
         } catch (error) {
@@ -334,4 +334,3 @@
 
 </body>
 </html>
-

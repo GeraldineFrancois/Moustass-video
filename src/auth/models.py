@@ -3,6 +3,10 @@ from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+# Single source of truth for the users table foreign-key string used
+# across this module (helps avoid duplicated literals and eases refactors).
+USER_FK = 'users.id'
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -24,7 +28,7 @@ class CodeFile(Base):
     file_name = Column(String(512), nullable=False)
     file_hash = Column(String(512), nullable=False)
     file_date_created = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey(USER_FK, ondelete='CASCADE'), nullable=False)
     owner = relationship('User')
 
 
@@ -34,7 +38,7 @@ class Signature(Base):
     signature_value = Column(Text, nullable=False)
     signature_date = Column(DateTime, server_default=func.now())
     file_id = Column(Integer, ForeignKey('code_files.id', ondelete='CASCADE'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey(USER_FK, ondelete='CASCADE'), nullable=False)
 
 
 class UsersLog(Base):
@@ -47,5 +51,5 @@ class UsersLog(Base):
     public_key = Column(Text, nullable=True)
     success = Column(Integer, nullable=False)
     log_date = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey(USER_FK, ondelete='CASCADE'), nullable=False)
     user = relationship('User')
