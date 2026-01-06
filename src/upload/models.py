@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Text, Enum, DECIMAL, TIMESTAMP
-from database import Base
+from upload.database import Base
 import enum
 from datetime import datetime
 
