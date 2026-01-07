@@ -23,6 +23,12 @@ def login_page(request: Request):
 	return templates.TemplateResponse('login.html', {'request': request})
 
 
+@app.get('/health')
+def health():
+	"""Healthcheck simple pour Docker Compose."""
+	return {"status": "healthy", "service": "auth-service"}
+
+
 # -------------------- Helpers -------------------------------------------------
 def _is_form_request(request: Request) -> bool:
 	"""Return True if request likely came from an HTML form (x-www-form-urlencoded)."""

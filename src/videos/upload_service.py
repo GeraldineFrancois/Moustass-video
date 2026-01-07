@@ -11,12 +11,10 @@ import aiofiles
 # ⚠️ Correction : importer Session de SQLAlchemy
 from sqlalchemy.orm import Session
 
-# Tes modules internes
-from auth.database import get_db
-from upload.upload_service import ensure_safe_path
-from videos.models import Video
+# Modules internes du service vidéo
+from .models import Video
 from .upload_api import router as upload_router
-from .database import Base, engine
+from .database import Base, engine, SessionLocal
 
 
 # ============================================================================
@@ -34,6 +32,19 @@ Base.metadata.create_all(bind=engine)
 
 # Inclure les routes d'upload
 app.include_router(upload_router)
+
+
+# ============================================================================
+# DÉPENDANCE DATABASE
+# ============================================================================
+
+def get_db():
+    """Dépendance pour obtenir la session DB"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # ============================================================================
@@ -108,60 +119,6 @@ async def shutdown_event():
 
 
 # ============================================================================
-# ROUTES VIDÉO
+# NOTE: Les routes vidéo sont gérées dans upload_api.py
+# Ce fichier sert uniquement d'orchestrateur principal
 # ============================================================================
-
-@app.get("/videos/{video_id}")
-async def get_video_info(video_id: str, db: Session = Depends(get_db)):
-    """Récupère les infos d'une vidéo"""
-    video = db.query(Video).filter(Video.id == video_id).first()
-    if not video:
-        raise HTTPException(status_code=404, detail="Vidéo non trouvée")
-    
-    return {
-        "id": video.id,
-        "sender_id": video.sender_id,
-        "receiver_id": video.receiver_id,
-        "status": video.status.value,
-        "amount": float(video.amount),
-        "created_at": video.created_at.isoformat() if video.created_at else None,
-        "expires_at": video.expires_at.isoformat() if video.expires_at else None,
-    }
-
-
-@app.get("/videos/{video_id}/download")
-async def download_video(video_id: str, db: Session = Depends(get_db)):
-    """Télécharge une vidéo"""
-    video = db.query(Video).filter(Video.id == video_id).first()
-    if not video:
-        raise HTTPException(status_code=404, detail="Vidéo non trouvée")
-    
-    safe_path = ensure_safe_path(Path(video.storage_path))
-
-    if not safe_path.exists():
-        raise HTTPException(status_code=404, detail="Fichier vidéo non trouvé")
-    
-    return FileResponse(
-        path=safe_path,
-        filename=safe_path.name,
-        media_type="video/mp4"
-    )
-
-
-@app.delete("/videos/{video_id}")
-async def delete_video(video_id: str, db: Session = Depends(get_db)):
-    """Supprime une vidéo"""
-    video = db.query(Video).filter(Video.id == video_id).first()
-    if not video:
-        raise HTTPException(status_code=404, detail="Vidéo non trouvée")
-    
-    # Supprime le fichier
-    safe_path = ensure_safe_path(Path(video.storage_path))
-    if safe_path.exists():
-        safe_path.unlink()
-    
-    # Supprime la base de données
-    db.delete(video)
-    db.commit()
-    
-    return {"message": "Vidéo supprimée avec succès"}
