@@ -4,6 +4,12 @@ WORKDIR /app
 
 ENV PYTHONPATH=/app
 
+# Outils systèmes requis pour le healthcheck (curl)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copier les requirements
 COPY requirements.txt .
 

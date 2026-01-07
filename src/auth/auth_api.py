@@ -23,6 +23,18 @@ def login_page(request: Request):
 	return templates.TemplateResponse('login.html', {'request': request})
 
 
+@app.get('/health')
+def health():
+	"""Healthcheck simple pour Docker Compose."""
+	return {"status": "healthy", "service": "auth-service"}
+
+
+@app.get('/services', response_class=HTMLResponse)
+def services_portal(request: Request):
+	"""Portail de navigation entre Auth et Video services."""
+	return templates.TemplateResponse('portal.html', {'request': request})
+
+
 # -------------------- Helpers -------------------------------------------------
 def _is_form_request(request: Request) -> bool:
 	"""Return True if request likely came from an HTML form (x-www-form-urlencoded)."""
@@ -245,3 +257,57 @@ def me(request: Request, db: Session = Depends(get_db)):
 	if not u:
 		raise HTTPException(status_code=404, detail='User not found')
 	return {'email': u.email, 'public_key': u.public_key, 'role': u.role}
+
+
+@app.get('/logs')
+def my_logs(request: Request, db: Session = Depends(get_db)):
+	"""Return recent connection logs for the authenticated user."""
+	auth = request.headers.get('authorization', '')
+	if not auth.lower().startswith('bearer '):
+		raise HTTPException(status_code=401, detail='Missing bearer token')
+	token = auth.split(' ', 1)[1]
+	payload = security.decode_access_token(token)
+	if not payload:
+		raise HTTPException(status_code=401, detail='Invalid token')
+	email = payload.get('sub')
+	u = crud.get_user_by_email(db, email)
+	if not u:
+		raise HTTPException(status_code=404, detail='User not found')
+	logs = crud.get_logs_for_user(db, u.id)
+	# serialize minimal fields
+	out = []
+	for e in logs:
+		out.append({'id': e.id, 'user_id': e.user_id, 'action_type': e.action_type, 'success': bool(e.success), 'timestamp': e.log_date.isoformat() if e.log_date else None})
+	return {'logs': out}
+
+
+@app.get('/admin/logs')
+def admin_logs(request: Request, db: Session = Depends(get_db)):
+	"""Admin-only: return recent logs for all users."""
+	auth = request.headers.get('authorization', '')
+	if not auth.lower().startswith('bearer '):
+		raise HTTPException(status_code=401, detail='Missing bearer token')
+	token = auth.split(' ', 1)[1]
+	payload = security.decode_access_token(token)
+	if not payload:
+		raise HTTPException(status_code=401, detail='Invalid token')
+	email = payload.get('sub')
+	u = crud.get_user_by_email(db, email)
+	if not u:
+		raise HTTPException(status_code=404, detail='User not found')
+	if (u.role or '').upper() != 'ADMIN':
+		raise HTTPException(status_code=403, detail='Admin access required')
+	logs = crud.get_all_logs(db)
+	out = []
+	# include user role by querying user per entry (keeps it simple)
+	for e in logs:
+		user = None
+		try:
+			user = db.query(database.Base.classes.users).get(e.user_id)
+		except Exception:
+			user = None
+		role = None
+		if user:
+			role = getattr(user, 'role', None)
+		out.append({'id': e.id, 'user_id': e.user_id, 'role': role, 'action_type': e.action_type, 'success': bool(e.success), 'timestamp': e.log_date.isoformat() if e.log_date else None})
+	return {'logs': out}
