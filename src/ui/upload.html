@@ -1,336 +1,316 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Upload Vidéo - Moustass</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>Moustass · Upload Vidéo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(135deg, #0f172a, #1f2937); }
+    .page { max-width: 1100px; margin: 24px auto; }
+    .card { border-radius: 12px; }
+    .header-title { color: #e5e7eb; }
+    .header-sub { color: #9ca3af; }
+    .badge-status { font-weight: 600; }
+    .token-chip { font-family: monospace; font-size: 12px; color: #d1d5db; }
+    .small-muted { color:#9ca3af; }
+    .table thead th { font-size: 13px; }
+  </style>
 </head>
 
-<body class="bg-light">
-
-<div class="container py-5">
+<body>
+  <div class="page container">
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12 text-center">
-            <h1 class="text-white mb-2">
-                <i class="fa-solid fa-film me-2"></i>Moustass Video Service
-            </h1>
-            <p class="text-white-50">Service de gestion et d'upload sécurisé de vidéos</p>
-        </div>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h2 class="header-title mb-1"><i class="fa-solid fa-film me-2"></i>Moustass Video Service</h2>
+        <div class="header-sub">Upload, signature RSA, liste et téléchargements</div>
+      </div>
+      <div>
+        <a class="btn btn-outline-light btn-sm" href="http://localhost:8001/services" target="_blank" rel="noopener noreferrer">
+          <i class="fa-solid fa-compass me-1"></i> Portail Services
+        </a>
+      </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Upload Form -->
-        <div class="col-lg-5">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h4 class="mb-4">
-                        <i class="fa-solid fa-upload me-2"></i>Upload Vidéo
-                    </h4>
-
-                    <form id="uploadForm">
-                        <div class="mb-3">
-                            <label for="videoFile" class="form-label">Vidéo (.mp4 / .ts)</label>
-                            <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.ts" required>
-                            <small class="text-muted">Taille max: 500MB</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="senderId" class="form-label">ID Expéditeur</label>
-                            <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="UUID ou ID utilisateur" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="receiverId" class="form-label">Destinataire</label>
-                            <input type="text" id="receiverId" name="receiver_id" class="form-control" value="ADMIN" required readonly>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="encryptedKey" class="form-label">Clé AES Chiffrée (RSA-3072)</label>
-                            <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="3" placeholder="Clé chiffrée en base64" required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="amount" class="form-label">Montant (EUR)</label>
-                            <input type="number" id="amount" name="amount" class="form-control" step="0.01" placeholder="0.00" required>
-                        </div>
-
-                        <!-- Progress -->
-                        <div id="progressContainer" class="mb-3 progress-container">
-                            <div class="progress">
-                                <div id="progressBar" class="progress-bar" style="width: 0%"></div>
-                            </div>
-                            <small id="progressText" class="text-muted"></small>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
-                            <i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload
-                        </button>
-                    </form>
-                </div>
+    <div class="row g-3">
+      <!-- Auth & Contexte -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-key me-2"></i>Authentification</h5>
+            <div class="mb-2">
+              <label class="form-label">Token JWT (Bearer)</label>
+              <textarea id="tokenInput" class="form-control" rows="2" placeholder="Collez ici le token obtenu après login"></textarea>
+              <div class="form-text">Stocké en local et utilisé pour les requêtes protégées.</div>
             </div>
-        </div>
-
-        <!-- Video List -->
-        <div class="col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4>
-                            <i class="fa-solid fa-film me-2"></i>Vidéos Uploadées
-                        </h4>
-                        <button class="btn btn-sm btn-outline-primary" id="refreshBtn">
-                            <i class="fa-solid fa-rotate-right me-1"></i>Actualiser
-                        </button>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                            <tr>
-                                <th style="width: 30%">ID</th>
-                                <th style="width: 15%">Statut</th>
-                                <th style="width: 20%">Montant</th>
-                                <th style="width: 25%">Expire</th>
-                                <th style="width: 10%">Actions</th>
-                            </tr>
-                            </thead>
-
-                            <tbody id="videosList">
-                            <tr id="emptyState">
-                                <td colspan="5" class="text-center text-muted py-4">
-                                    <i class="fa-solid fa-inbox me-2"></i>Aucune vidéo uploadée
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
+            <div class="d-flex gap-2 mb-3">
+              <button id="saveTokenBtn" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i>Enregistrer</button>
+              <button id="clearTokenBtn" class="btn btn-outline-secondary btn-sm">Effacer</button>
             </div>
+            <div class="mb-2">
+              <label class="form-label">ID Utilisateur</label>
+              <input id="userId" class="form-control" readonly />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Destinataire</label>
+              <input id="receiverId" class="form-control" value="ADMIN" readonly />
+            </div>
+            <div class="small-muted">Le `user_id` est extrait du token pour remplir les champs et accompagner vos opérations.</div>
+          </div>
         </div>
+      </div>
 
+      <!-- Upload -->
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="mb-3"><i class="fa-solid fa-upload me-2"></i>Uploader une Vidéo</h5>
+            <form id="uploadForm">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="videoFile" class="form-label">Vidéo (.mp4 / .ts)</label>
+                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.ts" required />
+                  <div class="form-text">Formats autorisés uniquement.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Montant (RS)</label>
+                  <div class="input-group">
+                    <span class="input-group-text">RS</span>
+                    <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0" placeholder="0.00" required />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">ID Expéditeur (readonly)</label>
+                  <input type="text" id="senderId" name="sender_id" class="form-control" readonly required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Destinataire (readonly)</label>
+                  <input type="text" id="receiverIdForm" name="receiver_id" class="form-control" value="ADMIN" readonly required />
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Clé AES chiffrée (Base64)</label>
+                  <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="2" placeholder="Collez la clé déjà chiffrée avec RSA-3072" required></textarea>
+                </div>
+              </div>
+              <div class="mt-3 d-flex align-items-center gap-3">
+                <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Uploader</button>
+                <div class="progress flex-grow-1" style="height: 8px; max-width: 300px;">
+                  <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <span id="progressText" class="token-chip"></span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Liste & Actions -->
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Vidéos Uploadées</h5>
+              <div class="d-flex gap-2">
+                <button id="refreshBtn" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-rotate-right me-1"></i>Actualiser</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>Statut</th>
+                    <th>Montant</th>
+                    <th>Signé</th>
+                    <th>Expire</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="videosList">
+                  <tr id="emptyState">
+                    <td colspan="6" class="text-center text-muted py-4"><i class="fa-solid fa-inbox me-2"></i>Aucune vidéo</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Loading Spinner -->
-<div id="loadingSpinner" class="loading">
-    <div class="spinner-border text-light" role="status">
-        <span class="visually-hidden">Chargement...</span>
+  <!-- Modal Signature -->
+  <div class="modal fade" id="signModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-pen-nib me-2"></i>Signer la Vidéo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2"><strong>Video ID:</strong> <span id="signVideoId" class="token-chip"></span></div>
+          <label class="form-label">Clé privée RSA (PEM)</label>
+          <textarea id="privateKeyPem" class="form-control" rows="6" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----" required></textarea>
+          <div class="form-text">La clé n'est jamais stockée côté serveur; elle sert juste à signer le hash du fichier.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="confirmSignBtn"><i class="fa-solid fa-badge-check me-1"></i>Signer</button>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-<script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+  <script>
     const API_BASE = 'http://localhost:8002/api/videos';
 
-    const escapeHTML = (value) => {
-        if (value === null || value === undefined) return '';
-        return String(value).replace(/[&<>'"`]/g, (c) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;',
-            '`': '&#96;'
-        })[c] || c);
-    };
+    // Helpers
+    const escapeHTML = (v) => (v == null ? '' : String(v).replace(/[&<>'"`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c])));
+    const formatDate = (s) => (!s ? 'N/A' : new Date(s).toLocaleString('fr-FR', { year:'numeric', month:'short', day:'numeric' }));
+    const truncateId = (id) => (id ? id.substring(0, 8) + '...' + id.substring(id.length - 4) : '');
+    const getToken = () => localStorage.getItem('authToken') || '';
+    const setToken = (t) => localStorage.setItem('authToken', t || '');
 
-    // Utilitaires
-    function showAlert(message, type = 'success') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-message alert-dismissible fade show`;
-        const textNode = document.createElement('span');
-        textNode.textContent = message;
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'btn-close';
-        closeBtn.dataset.bsDismiss = 'alert';
-        alertDiv.appendChild(textNode);
-        alertDiv.appendChild(closeBtn);
-        document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 5000);
+    function decodeJWT(token) {
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+        return payload;
+      } catch { return null; }
     }
 
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+    function applyAuthContext() {
+      const token = getToken();
+      document.getElementById('tokenInput').value = token;
+      const payload = decodeJWT(token);
+      const userId = payload?.user_id || '';
+      document.getElementById('userId').value = userId;
+      document.getElementById('senderId').value = userId;
+      document.getElementById('receiverId').value = 'ADMIN';
+      document.getElementById('receiverIdForm').value = 'ADMIN';
     }
 
-    function truncateId(id) {
-        return id.substring(0, 8) + '...' + id.substring(id.length - 4);
-    }
-
-    function showLoading(show = true) {
-        const spinner = document.getElementById('loadingSpinner');
-        if (show) {
-            spinner.classList.add('active');
-        } else {
-            spinner.classList.remove('active');
-        }
-    }
-
-    // Upload Form
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const formData = new FormData(document.getElementById('uploadForm'));
-        const submitBtn = document.getElementById('submitBtn');
-        const progressContainer = document.getElementById('progressContainer');
-
-        submitBtn.disabled = true;
-        progressContainer.classList.add('active');
-
-        try {
-            const response = await fetch(`${API_BASE}/upload`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de l\'upload');
-            }
-
-            const data = await response.json();
-            showAlert(`✅ Vidéo uploadée avec succès! ID: ${truncateId(data.video_id)}`, 'success');
-
-            // Réinitialiser le formulaire
-            document.getElementById('uploadForm').reset();
-            progressContainer.classList.remove('active');
-
-            // Actualiser la liste
-            await loadVideos();
-
-        } catch (error) {
-            showAlert(`❌ Erreur: ${error.message}`, 'danger');
-        } finally {
-            submitBtn.disabled = false;
-            progressContainer.classList.remove('active');
-        }
+    // Token actions
+    document.getElementById('saveTokenBtn').addEventListener('click', () => {
+      const t = document.getElementById('tokenInput').value.trim();
+      setToken(t);
+      applyAuthContext();
+    });
+    document.getElementById('clearTokenBtn').addEventListener('click', () => {
+      setToken('');
+      applyAuthContext();
     });
 
-    // Charger les vidéos
+    // Upload
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = getToken();
+      if (!token) { alert('Veuillez coller votre token JWT dans la section Authentification.'); return; }
+
+      const formData = new FormData(document.getElementById('uploadForm'));
+      const submitBtn = document.getElementById('submitBtn');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      submitBtn.disabled = true;
+
+      try {
+        progressBar.style.width = '15%'; progressText.textContent = 'Préparation...';
+        const resp = await fetch(`${API_BASE}/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        progressBar.style.width = '75%'; progressText.textContent = 'Traitement...';
+        const data = await resp.json();
+        progressBar.style.width = '100%'; progressText.textContent = 'Terminé';
+        alert(`Upload OK. ID: ${data.video_id}. Signez la vidéo dans la liste.`);
+        document.getElementById('uploadForm').reset();
+        await loadVideos();
+      } catch (err) {
+        alert('Erreur upload: ' + (err?.message || err));
+      } finally {
+        submitBtn.disabled = false;
+        setTimeout(() => { progressBar.style.width = '0%'; progressText.textContent = ''; }, 800);
+      }
+    });
+
+    // Liste
     async function loadVideos() {
-        showLoading(true);
-        try {
-            const response = await fetch(`${API_BASE}/list`);
-            const videos = await response.json();
-
-            const tbody = document.getElementById('videosList');
-            const emptyState = document.getElementById('emptyState');
-
-            // Nettoie le tableau (mais conserve la référence de l'état vide)
-            tbody.innerHTML = '';
-
-            if (!videos.length) {
-                emptyState.style.display = 'table-row';
-                tbody.appendChild(emptyState);
-                return;
-            }
-
-            emptyState.style.display = 'none';
-
-            videos.forEach((video) => {
-                const tr = document.createElement('tr');
-
-                const idCell = document.createElement('td');
-                idCell.className = 'id-cell';
-                idCell.textContent = truncateId(video.id || '');
-
-                const statusCell = document.createElement('td');
-                const statusBadge = document.createElement('span');
-                statusBadge.className = 'badge bg-success';
-                statusBadge.textContent = escapeHTML(video.status || '');
-                statusCell.appendChild(statusBadge);
-
-                const amountCell = document.createElement('td');
-                const amount = Number.parseFloat(video.amount ?? 0).toFixed(2);
-                amountCell.textContent = `€${amount}`;
-
-                const expiresCell = document.createElement('td');
-                expiresCell.textContent = formatDate(video.expires_at);
-
-                const actionsCell = document.createElement('td');
-
-                const viewBtn = document.createElement('button');
-                viewBtn.className = 'btn btn-sm btn-primary me-1';
-                viewBtn.title = 'Voir';
-                viewBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                viewBtn.addEventListener('click', () => viewVideo(video.id));
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-sm btn-danger';
-                deleteBtn.title = 'Supprimer';
-                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                deleteBtn.addEventListener('click', () => deleteVideo(video.id));
-
-                actionsCell.appendChild(viewBtn);
-                actionsCell.appendChild(deleteBtn);
-
-                tr.appendChild(idCell);
-                tr.appendChild(statusCell);
-                tr.appendChild(amountCell);
-                tr.appendChild(expiresCell);
-                tr.appendChild(actionsCell);
-
-                tbody.appendChild(tr);
-            });
-        } catch (error) {
-            showAlert('Erreur lors du chargement des vidéos', 'danger');
-        } finally {
-            showLoading(false);
-        }
+      try {
+        const response = await fetch(`${API_BASE}/list`);
+        const videos = await response.json();
+        const tbody = document.getElementById('videosList');
+        const emptyState = document.getElementById('emptyState');
+        tbody.innerHTML = '';
+        if (!videos.length) { emptyState.style.display='table-row'; tbody.appendChild(emptyState); return; }
+        emptyState.style.display='none';
+        videos.forEach((v) => {
+          const tr = document.createElement('tr');
+          const idCell = document.createElement('td'); idCell.textContent = truncateId(v.id);
+          const stCell = document.createElement('td'); const b = document.createElement('span'); b.className='badge bg-secondary badge-status'; b.textContent = v.status; stCell.appendChild(b);
+          const amtCell = document.createElement('td'); amtCell.textContent = `RS ${Number.parseFloat(v.amount ?? 0).toFixed(2)}`;
+          const signedCell = document.createElement('td'); signedCell.textContent = v.is_signed ? 'Oui' : 'Non';
+          const expCell = document.createElement('td'); expCell.textContent = formatDate(v.expires_at);
+          const actCell = document.createElement('td');
+          const viewBtn = document.createElement('a'); viewBtn.className='btn btn-sm btn-outline-primary me-1'; viewBtn.textContent='Voir'; viewBtn.href=`${API_BASE}/${v.id}`; viewBtn.target='_blank';
+          const dlBtn = document.createElement('a'); dlBtn.className='btn btn-sm btn-primary me-1'; dlBtn.textContent='Télécharger'; dlBtn.href=`${API_BASE}/${v.id}/download`;
+          const signBtn = document.createElement('button'); signBtn.className='btn btn-sm btn-success'; signBtn.textContent='Signer'; signBtn.disabled = !!v.is_signed; signBtn.addEventListener('click', () => openSignModal(v.id));
+          actCell.appendChild(viewBtn); actCell.appendChild(dlBtn); actCell.appendChild(signBtn);
+          tr.appendChild(idCell); tr.appendChild(stCell); tr.appendChild(amtCell); tr.appendChild(signedCell); tr.appendChild(expCell); tr.appendChild(actCell);
+          tbody.appendChild(tr);
+        });
+      } catch(e) { alert('Erreur chargement liste'); }
     }
-
-    // Voir les détails
-    async function viewVideo(videoId) {
-        try {
-            const response = await fetch(`${API_BASE}/${videoId}`);
-            const video = await response.json();
-
-            alert(`Détails de la vidéo:\n\nID: ${video.id}\nExpéditeur: ${video.sender_id}\nMontant: €${parseFloat(video.amount).toFixed(2)}\nStatut: ${video.status}\nCréée: ${formatDate(video.created_at)}\nExpire: ${formatDate(video.expires_at)}`);
-        } catch (error) {
-            showAlert('Erreur lors de la récupération des détails', 'danger');
-        }
-    }
-
-    // Supprimer une vidéo
-    async function deleteVideo(videoId) {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette vidéo?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/${videoId}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de la suppression');
-            }
-
-            showAlert('✅ Vidéo supprimée avec succès', 'success');
-            await loadVideos();
-        } catch (error) {
-            showAlert(`❌ Erreur: ${error.message}`, 'danger');
-        }
-    }
-
-    // Bouton actualiser
     document.getElementById('refreshBtn').addEventListener('click', loadVideos);
 
-    // Charger les vidéos au démarrage
-    loadVideos();
-</script>
+    // Signature
+    let signModalInstance = null;
+    function openSignModal(videoId) {
+      document.getElementById('signVideoId').textContent = videoId;
+      const modalEl = document.getElementById('signModal');
+      signModalInstance = new bootstrap.Modal(modalEl);
+      signModalInstance.show();
+    }
+    document.getElementById('confirmSignBtn').addEventListener('click', async () => {
+      const token = getToken();
+      if (!token) { alert('Token requis pour signer'); return; }
+      const videoId = document.getElementById('signVideoId').textContent;
+      const privateKey = document.getElementById('privateKeyPem').value.trim();
+      if (!privateKey) { alert('Veuillez coller votre clé privée PEM'); return; }
+      const form = new FormData(); form.append('private_key_pem', privateKey);
+      try {
+        const resp = await fetch(`${API_BASE}/${videoId}/sign`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: form });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        alert('Signature OK: ' + data.message);
+        signModalInstance?.hide();
+        document.getElementById('privateKeyPem').value = '';
+        await loadVideos();
+      } catch(err) { alert('Erreur signature: ' + (err?.message || err)); }
+    });
 
+    // Suppression protégée (nécessite token)
+    async function deleteVideo(videoId) {
+      const token = getToken();
+      if (!token) { alert('Token requis pour supprimer'); return; }
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) return;
+      try {
+        const resp = await fetch(`${API_BASE}/${videoId}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) throw new Error(await resp.text());
+        alert('Vidéo supprimée');
+        await loadVideos();
+      } catch(err) { alert('Erreur suppression: ' + (err?.message || err)); }
+    }
+
+    // Init
+    applyAuthContext();
+    loadVideos();
+  </script>
 </body>
 </html>
