@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOHN4QLNJIKKwhZ7S38YnN9Zx" crossorigin="anonymous"></script>
     <title>Admin Dashboard</title>
   </head>
   <body class="p-4">
@@ -85,117 +84,231 @@
         </div>
       </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOHN4QLNJIKKwhZ7S38YnN9Zx" crossorigin="anonymous"></script>
       <script>
-        // Logout and delete actions
-        async function logoutAndRedirect(){
-          localStorage.removeItem('access_token');
-          // redirect to login page
-          globalThis.location.href = '/';
+        // ==================== Configuration & Constants ====================
+        const BEARER = 'Bearer ';
+        const API_TIMEOUT = 5000;
+
+        // ==================== Token Management ====================
+        /**
+         * Get the JWT token from localStorage.
+         * @returns {string|null} The access token or null if not found
+         */
+        function getToken() {
+          return localStorage.getItem('access_token');
         }
 
-        async function deleteAccountAndRedirect(){
-          const token = localStorage.getItem('access_token');
-          if(!token) return alert('Non authentifié');
-          const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
-          if(!res.ok) return alert('Impossible de récupérer l\'utilisateur');
-          const me = await res.json();
-          if(!confirm('Supprimer votre compte '+me.email+' ? Cette action est irréversible.')) return;
-          // call delete endpoint
-          const form = new FormData();
-          form.append('email', me.email);
-          const del = await fetch('/delete_account', { method: 'POST', body: form });
-          if(!del.ok) return alert('Erreur lors de la suppression');
-          logoutAndRedirect();
+        /**
+         * Build Authorization header value with Bearer token.
+         * @returns {Object} Headers object ready for fetch()
+         */
+        function getAuthHeaders() {
+          const token = getToken();
+          return token ? { 'Authorization': BEARER + token } : {};
         }
-        async function fetchMyPublicKey(){
-          const token = localStorage.getItem('access_token');
-          if(!token) return;
-          try{
-            const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
-            if(!res.ok) return;
-            const j = await res.json();
-            document.getElementById('myPublicKey').value = j.public_key || '';
-          }catch(e){
+
+        // ==================== Public Key Management ====================
+        /**
+         * Fetch and display current user's public key.
+         * Called on page load and after admin creation.
+         */
+        async function fetchMyPublicKey() {
+          const token = getToken();
+          if (!token) return;
+          try {
+            const res = await fetch('/me', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            document.getElementById('myPublicKey').value = data.public_key || '';
+          } catch (e) {
             console.warn('fetchMyPublicKey failed', e);
           }
         }
 
-        document.addEventListener('DOMContentLoaded', ()=>{
-          fetchMyPublicKey();
-
-          document.getElementById('copyPublicBtn').addEventListener('click', async ()=>{
-            const ta = document.getElementById('myPublicKey');
-            try{
-              await navigator.clipboard.writeText(ta.value);
-            }catch(e){
+        /**
+         * Copy public key to clipboard using modern API with fallback.
+         */
+        function setupPublicKeyCopy() {
+          document.getElementById('copyPublicBtn').addEventListener('click', async () => {
+            const textarea = document.getElementById('myPublicKey');
+            try {
+              await navigator.clipboard.writeText(textarea.value);
+            } catch (e) {
               console.warn('clipboard write failed, falling back to select()', e);
-              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+              try { textarea.select(); } catch (err) { console.warn('textarea select failed', err); }
             }
           });
+        }
 
+        // ==================== Admin Creation ====================
+        /**
+         * Handle admin account creation form submission.
+         * Validates passwords, calls /signup_admin, displays private key.
+         */
+        function setupAdminForm() {
           const form = document.getElementById('adminCreateForm');
-          form.addEventListener('submit', async (e)=>{
+          form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = Object.fromEntries(new FormData(form).entries());
-            const token = localStorage.getItem('access_token');
-            const res = await fetch('/signup_admin', { method:'POST', headers:{'Content-Type':'application/json', 'Authorization': token ? 'Bearer '+token : ''}, body: JSON.stringify(data) });
-            const txt = await res.text();
-            let json = {};
-            try{ json = JSON.parse(txt); }catch(error_){ console.warn('Failed to parse /signup_admin response', error_, txt); alert('Erreur: '+txt); return; }
-            if(!res.ok){ alert('Erreur: '+(json.detail||JSON.stringify(json))); return; }
-            document.getElementById('adminPrivate').value = json.private_key || '';
-            document.getElementById('adminPublic').value = (json.user && json.user.public_key) ? json.user.public_key : '';
-            document.getElementById('adminKeys').style.display = 'block';
-            // Refresh my public key in case it changed
-            fetchMyPublicKey();
-            fetchMyLogs();
-            fetchAllLogs();
-          });
-        });
 
-        async function fetchMyLogs(){
-          const token = localStorage.getItem('access_token');
-          if(!token) return;
-          try{
-            const res = await fetch('/logs', { headers: { 'Authorization': 'Bearer '+token } });
-            if(!res.ok) return;
-            const j = await res.json();
+            try {
+              const res = await fetch('/signup_admin', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...getAuthHeaders()
+                },
+                body: JSON.stringify(data)
+              });
+
+              const json = await res.json();
+              if (!res.ok) {
+                alert('Erreur: ' + (json.detail || JSON.stringify(json)));
+                return;
+              }
+
+              // Display generated keys
+              document.getElementById('adminPrivate').value = json.private_key || '';
+              document.getElementById('adminPublic').value = (json.user && json.user.public_key) ? json.user.public_key : '';
+              document.getElementById('adminKeys').style.display = 'block';
+
+              // Refresh both tables
+              fetchMyPublicKey();
+              fetchMyLogs();
+              fetchAllLogs();
+            } catch (e) {
+              console.error('Admin creation failed', e);
+              alert('Erreur: ' + e.message);
+            }
+          });
+        }
+
+        // ==================== Log Display ====================
+        /**
+         * Fetch and display current user's connection logs.
+         */
+        async function fetchMyLogs() {
+          const token = getToken();
+          if (!token) return;
+          try {
+            const res = await fetch('/logs', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+
             const tbody = document.querySelector('#myLogs tbody');
             tbody.innerHTML = '';
-            (j.logs||[]).forEach(r=>{
-              const tr = document.createElement('tr');
-              tr.innerHTML = `<td>${r.id}</td><td>${r.action_type}</td><td>${r.success? 'Oui':'Non'}</td><td>${r.timestamp||''}</td>`;
-              tbody.appendChild(tr);
+            (data.logs || []).forEach(log => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${log.id}</td>
+                <td>${log.action_type}</td>
+                <td>${log.success ? 'Oui' : 'Non'}</td>
+                <td>${log.timestamp || ''}</td>
+              `;
+              tbody.appendChild(row);
             });
-          }catch(e){ console.warn('fetchMyLogs failed', e); }
+          } catch (e) {
+            console.warn('fetchMyLogs failed', e);
+          }
         }
 
-        async function fetchAllLogs(){
-          const token = localStorage.getItem('access_token');
-          if(!token) return;
-          try{
-            const res = await fetch('/admin/logs', { headers: { 'Authorization': 'Bearer '+token } });
-            if(!res.ok) return;
-            const j = await res.json();
+        /**
+         * Fetch and display all users' logs (admin only).
+         */
+        async function fetchAllLogs() {
+          const token = getToken();
+          if (!token) return;
+          try {
+            const res = await fetch('/admin/logs', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+
             const tbody = document.querySelector('#allLogs tbody');
             tbody.innerHTML = '';
-            (j.logs||[]).forEach(r=>{
-              const tr = document.createElement('tr');
-              tr.innerHTML = `<td>${r.id}</td><td>${r.user_id}</td><td>${r.role||''}</td><td>${r.action_type}</td><td>${r.success? 'Oui':'Non'}</td><td>${r.timestamp||''}</td>`;
-              tbody.appendChild(tr);
+            (data.logs || []).forEach(log => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${log.id}</td>
+                <td>${log.user_id}</td>
+                <td>${log.role || ''}</td>
+                <td>${log.action_type}</td>
+                <td>${log.success ? 'Oui' : 'Non'}</td>
+                <td>${log.timestamp || ''}</td>
+              `;
+              tbody.appendChild(row);
             });
-          }catch(e){ console.warn('fetchAllLogs failed', e); }
+          } catch (e) {
+            console.warn('fetchAllLogs failed', e);
+          }
         }
 
-        // Wire up logout / delete buttons
-        document.addEventListener('DOMContentLoaded', ()=>{
+        // ==================== Account Management ====================
+        /**
+         * Clear token and redirect to login page.
+         */
+        function logoutAndRedirect() {
+          localStorage.removeItem('access_token');
+          globalThis.location.href = '/';
+        }
+
+        /**
+         * Delete current user account after confirmation.
+         * Fetches user info via /me, confirms deletion, calls /delete_account.
+         */
+        async function deleteAccountAndRedirect() {
+          const token = getToken();
+          if (!token) return alert('Non authentifié');
+
+          try {
+            // Get user email for display
+            const res = await fetch('/me', { headers: getAuthHeaders() });
+            if (!res.ok) return alert('Impossible de récupérer l\'utilisateur');
+            const me = await res.json();
+
+            // Confirm deletion with user
+            if (!confirm(`Supprimer votre compte ${me.email} ? Cette action est irréversible.`)) {
+              return;
+            }
+
+            // Call delete endpoint
+            const form = new FormData();
+            form.append('email', me.email);
+            const del = await fetch('/delete_account', { method: 'POST', body: form });
+            if (!del.ok) return alert('Erreur lors de la suppression');
+
+            // Success: logout and redirect
+            logoutAndRedirect();
+          } catch (e) {
+            console.error('Account deletion failed', e);
+            alert('Erreur: ' + e.message);
+          }
+        }
+
+        // ==================== Page Initialization ====================
+        document.addEventListener('DOMContentLoaded', () => {
+          // Load initial public key
+          fetchMyPublicKey();
+
+          // Setup UI event handlers
+          setupPublicKeyCopy();
+          setupAdminForm();
+
+          // Setup logout/delete buttons
           const logoutBtn = document.getElementById('logoutBtn');
-          if(logoutBtn) logoutBtn.addEventListener('click', ()=>logoutAndRedirect());
-          const delBtn = document.getElementById('deleteAccountBtn');
-          if(delBtn) delBtn.addEventListener('click', ()=>deleteAccountAndRedirect());
-          // Ensure logs are loaded when tab selected
+          if (logoutBtn) logoutBtn.addEventListener('click', () => logoutAndRedirect());
+
+          const deleteBtn = document.getElementById('deleteAccountBtn');
+          if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAccountAndRedirect());
+
+          // Load logs when tabs open
           const logsTab = document.getElementById('tab-logs');
-          if(logsTab) logsTab.addEventListener('shown.bs.tab', ()=>{ fetchMyLogs(); fetchAllLogs(); });
+          if (logsTab) {
+            logsTab.addEventListener('shown.bs.tab', () => {
+              fetchMyLogs();
+              fetchAllLogs();
+            });
+          }
         });
       </script>
 
