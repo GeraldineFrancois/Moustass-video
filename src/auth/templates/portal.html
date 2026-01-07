@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portail des Services Moustass</title>
+  <style>
+    :root { --bg:#0f172a; --card:#111827; --text:#e5e7eb; --accent:#38bdf8; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background:linear-gradient(135deg,#0f172a,#1f2937); color:var(--text); }
+    .wrap { max-width:960px; margin:40px auto; padding:0 16px; }
+    .header { display:flex; align-items:center; justify-content:space-between; }
+    .title { font-size:24px; font-weight:700; letter-spacing:.3px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:24px; }
+    .card { background:var(--card); border:1px solid #1f2937; border-radius:12px; padding:16px; box-shadow:0 4px 16px rgba(0,0,0,.25); }
+    .card h2 { margin:0 0 8px; font-size:18px; }
+    .card p { margin:0 0 12px; color:#9ca3af; }
+    .links a { display:inline-block; margin:6px 8px 0 0; padding:8px 12px; border-radius:8px; border:1px solid #374151; color:var(--text); text-decoration:none; transition:all .15s ease; }
+    .links a:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+    .footer { margin-top:24px; font-size:12px; color:#9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="title">🎬 Portail des Services Moustass</div>
+      <div>
+        <a href="/" style="color:#93c5fd;text-decoration:none">↩︎ Retour Login</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>🔐 Auth Service</h2>
+        <p>Inscription, connexion, tableaux de bord et gestion des clés.</p>
+        <div class="links">
+          <a href="/" rel="noopener">Login</a>
+          <a href="/admin/dashboard" rel="noopener">Admin Dashboard</a>
+          <a href="/client/dashboard" rel="noopener">Client Dashboard</a>
+          <a href="/health" rel="noopener">Santé (health)</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>🎥 Video Service</h2>
+        <p>Upload/Téléchargement, signature, métadonnées et expiration.</p>
+        <div class="links">
+          <a href="http://localhost:8002/" target="_blank" rel="noopener noreferrer">Interface Upload</a>
+          <a href="http://localhost:8002/docs" target="_blank" rel="noopener noreferrer">Swagger Docs</a>
+          <a href="http://localhost:8002/redoc" target="_blank" rel="noopener noreferrer">ReDoc</a>
+          <a href="http://localhost:8002/api/videos/list" target="_blank" rel="noopener noreferrer">Lister les vidéos</a>
+          <a href="http://localhost:8002/api/videos/health/status" target="_blank" rel="noopener noreferrer">Santé (health)</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">
+      <span>Ports: Auth 8001 · Video 8002 · MySQL 3307</span>
+    </div>
+  </div>
+</body>
+</html>
