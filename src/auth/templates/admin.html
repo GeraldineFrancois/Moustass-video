@@ -309,7 +309,38 @@
               fetchAllLogs();
             });
           }
+            // Ensure tabs work even if Bootstrap events fail: fallback manual toggling
+            initializeTabsFallback();
         });
+
+          /**
+           * Fallback tab activation: toggles `.active` and `.show` classes
+           * so tabs work even when Bootstrap JS events aren't firing.
+           */
+          function initializeTabsFallback() {
+            const tabButtons = document.querySelectorAll('#adminTab [data-bs-toggle="tab"]');
+            if (!tabButtons || tabButtons.length === 0) return;
+            tabButtons.forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                // If Bootstrap Tab API is present, let it handle activation
+                if (globalThis.bootstrap !== undefined && globalThis.bootstrap.Tab) {
+                  return;
+                }
+
+                e.preventDefault();
+                const targetSelector = (btn.dataset && btn.dataset.bsTarget) ? btn.dataset.bsTarget : btn.getAttribute('data-bs-target');
+                const target = document.querySelector(targetSelector);
+                if (!target) return;
+                // deactivate other buttons
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // deactivate panes
+                const panes = document.querySelectorAll('.tab-pane');
+                panes.forEach(p => p.classList.remove('show', 'active'));
+                target.classList.add('show', 'active');
+              });
+            });
+          }
       </script>
 
       <div>

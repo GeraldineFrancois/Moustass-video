@@ -191,7 +191,28 @@
 
           const deleteBtn = document.getElementById('deleteAccountBtn');
           if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAccountAndRedirect());
+          // Ensure tabs work even if Bootstrap events fail: fallback manual toggling
+          initializeTabsFallback();
         });
+
+        function initializeTabsFallback() {
+          const tabButtons = document.querySelectorAll('#clientTab [data-bs-toggle="tab"]');
+          if (!tabButtons || tabButtons.length === 0) return;
+          tabButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              if (globalThis.bootstrap !== undefined && globalThis.bootstrap.Tab) return;
+              e.preventDefault();
+              const targetSelector = (btn.dataset && btn.dataset.bsTarget) ? btn.dataset.bsTarget : btn.getAttribute('data-bs-target');
+              const target = document.querySelector(targetSelector);
+              if (!target) return;
+              tabButtons.forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              const panes = document.querySelectorAll('.tab-pane');
+              panes.forEach(p => p.classList.remove('show', 'active'));
+              target.classList.add('show', 'active');
+            });
+          });
+        }
 
     </body>
 </html>
