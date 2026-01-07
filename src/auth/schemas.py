@@ -18,8 +18,8 @@ class UserOut(BaseModel):
     role: str
     public_key: Optional[str]
 
-    class Config:
-        orm_mode = True
+    # Pydantic v2: enable reading from ORM attributes
+    model_config = {"from_attributes": True}
 
 
 class LoginRequest(BaseModel):
