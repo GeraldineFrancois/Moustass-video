@@ -77,3 +77,13 @@ def log_event(db: Session, action_type: str, user_id: int, success: int = 1, **k
     db.commit()
     db.refresh(entry)
     return entry
+
+
+def get_logs_for_user(db: Session, user_id: int, limit: int = 100):
+    """Return recent log entries for a given user ordered newest first."""
+    return db.query(models.UsersLog).filter(models.UsersLog.user_id == user_id).order_by(models.UsersLog.log_date.desc()).limit(limit).all()
+
+
+def get_all_logs(db: Session, limit: int = 500):
+    """Return recent log entries for all users ordered newest first."""
+    return db.query(models.UsersLog).order_by(models.UsersLog.log_date.desc()).limit(limit).all()
