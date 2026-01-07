@@ -22,6 +22,9 @@ from sqlalchemy.engine import Engine
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
+# Constants for logging and error messages
+TABLE_NOT_PRESENT_MSG = "Table %s not present on one side, skipping."
+
 
 def connect(url: str) -> Engine:
     logger.info("Connecting to %s", url)
@@ -49,6 +52,23 @@ def row_to_dict(row) -> Dict:
         return dict(row)
 
 
+def _get_db_connection(engine: Engine, execute: bool):
+    """Get connection context for destination database."""
+    if execute:
+        dst_ctx = engine.begin()
+        return dst_ctx.__enter__(), dst_ctx
+    else:
+        return engine.connect(), None
+
+
+def _close_db_connection(conn, ctx, execute: bool):
+    """Close database connection, committing if in execute mode."""
+    if execute:
+        ctx.__exit__(None, None, None)
+    else:
+        conn.close()
+
+
 def migrate_users(src_engine: Engine, dst_engine: Engine, users_table: Table, execute: bool) -> Dict[int, int]:
     """Migrate users. Returns mapping source_id -> dest_id."""
     mapping: Dict[int, int] = {}
@@ -57,11 +77,7 @@ def migrate_users(src_engine: Engine, dst_engine: Engine, users_table: Table, ex
     rows = src_conn.execute(sel).fetchall()
     # Use an explicit transaction for destination inserts so they are committed
     # before we proceed to dependent tables (users_logs, signatures).
-    if execute:
-        dst_ctx = dst_engine.begin()
-        dst_conn = dst_ctx.__enter__()
-    else:
-        dst_conn = dst_engine.connect()
+    dst_conn, dst_ctx = _get_db_connection(dst_engine, execute)
     inserted = 0
     skipped = 0
     for r in rows:
@@ -96,13 +112,34 @@ def migrate_users(src_engine: Engine, dst_engine: Engine, users_table: Table, ex
             inserted += 1
 
     src_conn.close()
-    if execute:
-        # commit happens when exiting the context manager
-        dst_ctx.__exit__(None, None, None)
-    else:
-        dst_conn.close()
+    _close_db_connection(dst_conn, dst_ctx, execute)
     logger.info("Users: inserted=%d skipped=%d", inserted, skipped)
     return mapping
+
+
+def _process_migration_row(data: Dict, mapping_users: Dict[int, int], dst_tbl, dst_conn, execute: bool, inserted: int, skipped: int, row_exists_check, insert_log_msg: str) -> tuple:
+    """Helper to process a single row during migration. Returns (new_id, inserted, skipped)."""
+    src_id = data.get('id')
+    # remap user id if available
+    uid = data.get('user_id')
+    if uid in mapping_users:
+        data['user_id'] = mapping_users[uid]
+
+    exists = dst_conn.execute(select(dst_tbl).where(row_exists_check(dst_tbl, data))).fetchone()
+    if exists:
+        existing_data = row_to_dict(exists)
+        existing_id = int(existing_data['id']) if src_id else None
+        return existing_id, inserted, skipped + 1
+
+    logger.info(insert_log_msg, src_id, data.get('file_name') or data.get('action_type'))
+    if execute:
+        res = dst_conn.execute(dst_tbl.insert().values(**data))
+        try:
+            new_id = int(res.inserted_primary_key[0])
+        except Exception:
+            new_id = None
+        return new_id, inserted + 1, skipped
+    return src_id, inserted + 1, skipped
 
 
 def migrate_code_files(src_engine: Engine, dst_engine: Engine, table_name: str, mapping_users: Dict[int, int], execute: bool) -> Dict[int, int]:
@@ -111,49 +148,29 @@ def migrate_code_files(src_engine: Engine, dst_engine: Engine, table_name: str, 
     src_tbl = md_src.tables.get(table_name)
     dst_tbl = md_dst.tables.get(table_name)
     if src_tbl is None or dst_tbl is None:
-        logger.info("Table %s not present on one side, skipping.", table_name)
+        logger.info(TABLE_NOT_PRESENT_MSG, table_name)
         return {}
     src_conn = src_engine.connect()
     rows = src_conn.execute(select(src_tbl)).fetchall()
-    if execute:
-        dst_ctx = dst_engine.begin()
-        dst_conn = dst_ctx.__enter__()
-    else:
-        dst_conn = dst_engine.connect()
+    dst_conn, dst_ctx = _get_db_connection(dst_engine, execute)
     mapping_files: Dict[int, int] = {}
     inserted = 0; skipped = 0
+
+    def check_exists(tbl, data):
+        return and_(tbl.c.file_hash == data.get('file_hash'), tbl.c.user_id == data.get('user_id'))
+
     for r in rows:
         data = row_to_dict(r)
         src_id = data.get('id')
-        # remap user id if available
-        uid = data.get('user_id')
-        if uid in mapping_users:
-            data['user_id'] = mapping_users[uid]
-        # avoid duplicates by file_hash + user_id
-        exists = dst_conn.execute(select(dst_tbl).where(and_(dst_tbl.c.file_hash == data.get('file_hash'), dst_tbl.c.user_id == data.get('user_id')))).fetchone()
-        if exists:
-            mapping_files[src_id] = int(row_to_dict(exists)['id'])
-            skipped += 1
-            continue
-        logger.info("Will insert code_file id=%s name=%s", src_id, data.get('file_name'))
-        if execute:
-            res = dst_conn.execute(dst_tbl.insert().values(**data))
-            try:
-                new_id = int(res.inserted_primary_key[0])
-            except Exception:
-                new = dst_conn.execute(select(dst_tbl).where(dst_tbl.c.file_hash == data.get('file_hash'))).fetchone()
-                new_id = int(row_to_dict(new)['id'])
+        new_id, inserted, skipped = _process_migration_row(
+            data, mapping_users, dst_tbl, dst_conn, execute, inserted, skipped,
+            check_exists, "Will insert code_file id=%s name=%s"
+        )
+        if new_id:
             mapping_files[src_id] = new_id
-            inserted += 1
-        else:
-            mapping_files[src_id] = src_id
-            inserted += 1
 
     src_conn.close()
-    if execute:
-        dst_ctx.__exit__(None, None, None)
-    else:
-        dst_conn.close()
+    _close_db_connection(dst_conn, dst_ctx, execute)
     logger.info("Code files: inserted=%d skipped=%d", inserted, skipped)
     return mapping_files
 
@@ -164,39 +181,28 @@ def migrate_signatures(src_engine: Engine, dst_engine: Engine, table_name: str, 
     src_tbl = md_src.tables.get(table_name)
     dst_tbl = md_dst.tables.get(table_name)
     if src_tbl is None or dst_tbl is None:
-        logger.info("Table %s not present on one side, skipping.", table_name)
+        logger.info(TABLE_NOT_PRESENT_MSG, table_name)
         return
     src_conn = src_engine.connect()
     rows = src_conn.execute(select(src_tbl)).fetchall()
-    if execute:
-        dst_ctx = dst_engine.begin()
-        dst_conn = dst_ctx.__enter__()
-    else:
-        dst_conn = dst_engine.connect()
+    dst_conn, dst_ctx = _get_db_connection(dst_engine, execute)
     inserted = 0; skipped = 0
+
+    def check_exists(tbl, data):
+        return and_(tbl.c.signature_value == data.get('signature_value'), tbl.c.file_id == data.get('file_id'), tbl.c.user_id == data.get('user_id'))
+
     for r in rows:
         data = row_to_dict(r)
+        # Remap file_id
         if data.get('file_id') in mapping_files:
             data['file_id'] = mapping_files[data['file_id']]
-        if data.get('user_id') in mapping_users:
-            data['user_id'] = mapping_users[data['user_id']]
-        # avoid duplicates by signature_value + file_id + user_id
-        exists = dst_conn.execute(select(dst_tbl).where(and_(dst_tbl.c.signature_value == data.get('signature_value'), dst_tbl.c.file_id == data.get('file_id'), dst_tbl.c.user_id == data.get('user_id')))).fetchone()
-        if exists:
-            skipped += 1
-            continue
-        logger.info("Will insert signature for file_id=%s user_id=%s", data.get('file_id'), data.get('user_id'))
-        if execute:
-            dst_conn.execute(dst_tbl.insert().values(**data))
-            inserted += 1
-        else:
-            inserted += 1
+        _, inserted, skipped = _process_migration_row(
+            data, mapping_users, dst_tbl, dst_conn, execute, inserted, skipped,
+            check_exists, "Will insert signature for file_id=%s user_id=%s"
+        )
 
     src_conn.close()
-    if execute:
-        dst_ctx.__exit__(None, None, None)
-    else:
-        dst_conn.close()
+    _close_db_connection(dst_conn, dst_ctx, execute)
     logger.info("Signatures: inserted=%d skipped=%d", inserted, skipped)
 
 
@@ -206,37 +212,25 @@ def migrate_users_logs(src_engine: Engine, dst_engine: Engine, table_name: str, 
     src_tbl = md_src.tables.get(table_name)
     dst_tbl = md_dst.tables.get(table_name)
     if src_tbl is None or dst_tbl is None:
-        logger.info("Table %s not present on one side, skipping.", table_name)
+        logger.info(TABLE_NOT_PRESENT_MSG, table_name)
         return
     src_conn = src_engine.connect()
     rows = src_conn.execute(select(src_tbl)).fetchall()
-    if execute:
-        dst_ctx = dst_engine.begin()
-        dst_conn = dst_ctx.__enter__()
-    else:
-        dst_conn = dst_engine.connect()
+    dst_conn, dst_ctx = _get_db_connection(dst_engine, execute)
     inserted = 0; skipped = 0
+
+    def check_exists(tbl, data):
+        return and_(tbl.c.action_type == data.get('action_type'), tbl.c.log_date == data.get('log_date'), tbl.c.user_id == data.get('user_id'))
+
     for r in rows:
         data = row_to_dict(r)
-        if data.get('user_id') in mapping_users:
-            data['user_id'] = mapping_users[data['user_id']]
-        # avoid duplicates by action_type + log_date + user_id
-        exists = dst_conn.execute(select(dst_tbl).where(and_(dst_tbl.c.action_type == data.get('action_type'), dst_tbl.c.log_date == data.get('log_date'), dst_tbl.c.user_id == data.get('user_id')))).fetchone()
-        if exists:
-            skipped += 1
-            continue
-        logger.info("Will insert users_log action=%s user_id=%s", data.get('action_type'), data.get('user_id'))
-        if execute:
-            dst_conn.execute(dst_tbl.insert().values(**data))
-            inserted += 1
-        else:
-            inserted += 1
+        _, inserted, skipped = _process_migration_row(
+            data, mapping_users, dst_tbl, dst_conn, execute, inserted, skipped,
+            check_exists, "Will insert users_log action=%s user_id=%s"
+        )
 
     src_conn.close()
-    if execute:
-        dst_ctx.__exit__(None, None, None)
-    else:
-        dst_conn.close()
+    _close_db_connection(dst_conn, dst_ctx, execute)
     logger.info("Users logs: inserted=%d skipped=%d", inserted, skipped)
 
 

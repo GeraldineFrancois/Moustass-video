@@ -8,6 +8,11 @@ from . import database
 from sqlalchemy.orm import Session
 import os
 
+# Error message constants to avoid duplication
+ERROR_USER_NOT_FOUND = 'User not found'
+ERROR_MISSING_BEARER = 'Missing bearer token'
+ERROR_INVALID_TOKEN = 'Invalid token'
+
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), 'templates'))
 
 app = FastAPI(title='Auth Service')
@@ -235,15 +240,15 @@ def me(request: Request, db: Session = Depends(get_db)):
 	"""
 	auth = request.headers.get('authorization', '')
 	if not auth.lower().startswith('bearer '):
-		raise HTTPException(status_code=401, detail='Missing bearer token')
+		raise HTTPException(status_code=401, detail=ERROR_MISSING_BEARER)
 	token = auth.split(' ', 1)[1]
 	payload = security.decode_access_token(token)
 	if not payload:
-		raise HTTPException(status_code=401, detail='Invalid token')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_TOKEN)
 	email = payload.get('sub')
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
 	return {'email': u.email, 'public_key': u.public_key, 'role': u.role}
 
 
@@ -252,15 +257,15 @@ def my_logs(request: Request, db: Session = Depends(get_db)):
 	"""Return recent connection logs for the authenticated user."""
 	auth = request.headers.get('authorization', '')
 	if not auth.lower().startswith('bearer '):
-		raise HTTPException(status_code=401, detail='Missing bearer token')
+		raise HTTPException(status_code=401, detail=ERROR_MISSING_BEARER)
 	token = auth.split(' ', 1)[1]
 	payload = security.decode_access_token(token)
 	if not payload:
-		raise HTTPException(status_code=401, detail='Invalid token')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_TOKEN)
 	email = payload.get('sub')
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
 	logs = crud.get_logs_for_user(db, u.id)
 	# serialize minimal fields
 	out = []
@@ -274,15 +279,15 @@ def admin_logs(request: Request, db: Session = Depends(get_db)):
 	"""Admin-only: return recent logs for all users."""
 	auth = request.headers.get('authorization', '')
 	if not auth.lower().startswith('bearer '):
-		raise HTTPException(status_code=401, detail='Missing bearer token')
+		raise HTTPException(status_code=401, detail=ERROR_MISSING_BEARER)
 	token = auth.split(' ', 1)[1]
 	payload = security.decode_access_token(token)
 	if not payload:
-		raise HTTPException(status_code=401, detail='Invalid token')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_TOKEN)
 	email = payload.get('sub')
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
 	if (u.role or '').upper() != 'ADMIN':
 		raise HTTPException(status_code=403, detail='Admin access required')
 	logs = crud.get_all_logs(db)
