@@ -28,7 +28,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Activer CORS pour le tableau de bord admin/auth
+# Activer CORS pour le tableau de bord admin/auth - Configuration sécurisée
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -38,8 +38,9 @@ app.add_middleware(
         "http://127.0.0.1:8002",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    max_age=3600,  # Cache CORS preflight requests for 1 hour
 )
 
 # Créer les tables au démarrage

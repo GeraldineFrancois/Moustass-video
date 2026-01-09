@@ -8,7 +8,7 @@ services:
     ports:
       - "8001:8000"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-KAI9JHKCZjgIt157saWm_vLKlcylvfHOi9PVQbKFzXQ}
       AUTH_DB_HOST: mysql
       AUTH_DB_USER: auth_user
       AUTH_DB_PASSWORD: auth_password
@@ -35,7 +35,7 @@ services:
     ports:
       - "8002:8000"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-KAI9JHKCZjgIt157saWm_vLKlcylvfHOi9PVQbKFzXQ}
       DATABASE_URL: ${VIDEO_DATABASE_URL:-mysql+pymysql://video_user:video_password@mysql:3306/videos_db}
       UPLOAD_DIR: /app/uploads
     volumes:
@@ -65,7 +65,7 @@ services:
     ports:
       - "8003:8003"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-KAI9JHKCZjgIt157saWm_vLKlcylvfHOi9PVQbKFzXQ}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_USER: security_user

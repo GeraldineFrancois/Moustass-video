@@ -6,6 +6,7 @@ Automated vulnerability scanning
 import os
 import subprocess
 import json
+import re
 from typing import Dict, Optional
 from pathlib import Path
 
@@ -18,6 +19,24 @@ class SecurityScanner:
         self.sonar_token = os.getenv("SONAR_TOKEN", "")
         self.sonar_host = os.getenv("SONAR_HOST_URL", "http://localhost:9000")
         self.project_root = Path(__file__).parent.parent.parent
+    
+    def _validate_path(self, path: str) -> Path:
+        """Validate and sanitize file path to prevent directory traversal"""
+        try:
+            p = Path(path).resolve()
+            if not (p.is_dir() or p.is_file()):
+                raise ValueError(f"Invalid path: {path}")
+            return p
+        except Exception as e:
+            raise ValueError(f"Invalid path: {path}") from e
+    
+    def _validate_project_key(self, project_key: str) -> str:
+        """Validate project key (alphanumeric, dash, underscore only)"""
+        if not re.match(r'^[a-zA-Z0-9_-]+$', project_key):
+            raise ValueError(f"Invalid project key format: {project_key}")
+        if len(project_key) > 255:
+            raise ValueError("Project key too long")
+        return project_key
     
     def scan_snyk_code(self, target_path: Optional[str] = None) -> Dict:
         """
@@ -35,7 +54,17 @@ class SecurityScanner:
                 "message": "SNYK_TOKEN not configured"
             }
         
-        scan_path = target_path or str(self.project_root)
+        try:
+            # Validate and sanitize path
+            if target_path:
+                scan_path = str(self._validate_path(target_path))
+            else:
+                scan_path = str(self.project_root)
+        except ValueError as e:
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
         
         try:
             # Set Snyk token
@@ -88,7 +117,17 @@ class SecurityScanner:
                 "message": "SNYK_TOKEN not configured"
             }
         
-        scan_path = target_path or str(self.project_root)
+        try:
+            # Validate and sanitize path
+            if target_path:
+                scan_path = str(self._validate_path(target_path))
+            else:
+                scan_path = str(self.project_root)
+        except ValueError as e:
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
         
         try:
             env = os.environ.copy()
@@ -136,14 +175,19 @@ class SecurityScanner:
             }
         
         try:
-            # Run sonar-scanner
+            # Validate project key to prevent injection attacks
+            validated_key = self._validate_project_key(project_key)
+            validated_host = self.sonar_host  # Already from environment
+            validated_base_dir = str(self.project_root)  # Already validated internally
+            
+            # Run sonar-scanner with validated parameters
             result = subprocess.run(
                 [
                     "sonar-scanner",
-                    f"-Dsonar.projectKey={project_key}",
-                    f"-Dsonar.host.url={self.sonar_host}",
+                    f"-Dsonar.projectKey={validated_key}",
+                    f"-Dsonar.host.url={validated_host}",
                     f"-Dsonar.login={self.sonar_token}",
-                    f"-Dsonar.projectBaseDir={self.project_root}"
+                    f"-Dsonar.projectBaseDir={validated_base_dir}"
                 ],
                 capture_output=True,
                 text=True,

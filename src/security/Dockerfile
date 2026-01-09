@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
 RUN curl -Lo /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-linux && \
     chmod +x /usr/local/bin/snyk
 
+# Créer un utilisateur non-root pour la sécurité
+RUN useradd -m -u 1000 appuser
+
 # Copy requirements
 COPY requirements.txt .
 COPY requirements-dev.txt .
@@ -25,8 +28,12 @@ COPY requirements-dev.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
-# Copy source code
+# Copy source code avec permissions correctes
 COPY src/ /app/src/
+RUN chown -R appuser:appuser /app
+
+# Basculer vers l'utilisateur non-root
+USER appuser
 
 # Expose port
 EXPOSE 8003
