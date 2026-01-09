@@ -134,7 +134,14 @@ async def signup_admin(request: Request, db: Session = Depends(get_db)):
 
 	try:
 		user_obj, private_key = auth_service.create_user_with_keys(db, user_in, role='ADMIN')
-		return {'user': schemas.UserOut.from_orm(user_obj), 'private_key': private_key}
+		# Générer aussi un JWT pour que l'utilisateur puisse s'authentifier immédiatement
+		token = security.create_access_token({'sub': user_obj.email, 'role': user_obj.role, 'user_id': user_obj.id})
+		return {
+			'user': schemas.UserOut.from_orm(user_obj),
+			'private_key': private_key,
+			'access_token': token,
+			'token_type': 'bearer'
+		}
 	except Exception:
 		import traceback
 		tb = traceback.format_exc()
@@ -162,7 +169,14 @@ async def signup_client(request: Request, db: Session = Depends(get_db)):
 
 	try:
 		user_obj, private_key = auth_service.create_user_with_keys(db, user_in, role='USER')
-		return {'user': schemas.UserOut.from_orm(user_obj), 'private_key': private_key}
+		# Générer aussi un JWT pour que l'utilisateur puisse s'authentifier immédiatement
+		token = security.create_access_token({'sub': user_obj.email, 'role': user_obj.role, 'user_id': user_obj.id})
+		return {
+			'user': schemas.UserOut.from_orm(user_obj),
+			'private_key': private_key,
+			'access_token': token,
+			'token_type': 'bearer'
+		}
 	except Exception:
 		import traceback
 		tb = traceback.format_exc()

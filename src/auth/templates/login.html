@@ -39,6 +39,14 @@
               </form>
               <div id="responseBox" class="mt-2" style="display:none">
                 <div class="mb-2">
+                  <label for="tokenText" class="form-label">Token JWT (Bearer)</label>
+                  <div class="input-group">
+                    <textarea id="tokenText" class="form-control" rows="2" readonly></textarea>
+                    <button id="copyToken" class="btn btn-outline-secondary" type="button">Copier</button>
+                  </div>
+                  <div class="form-text">Ce token commence par "ey". Il sera automatiquement stocké et utilisable dans la page Upload.</div>
+                </div>
+                <div class="mb-2">
                   <label for="privateKeyText" id="responseTitle" class="form-label">Clé privée</label>
                   <div class="input-group">
                     <textarea id="privateKeyText" class="form-control" rows="6" readonly></textarea>
@@ -145,12 +153,25 @@
                 return;
               }
               const pk = json.private_key || json.privateKey || '';
+              const token = json.access_token || '';
               if(pk){
                 // show both private and public keys when available
                 const pub = (json.user && json.user.public_key) ? json.user.public_key : '';
-                showResponseKeys(pk, pub);
+                // stocker le token si présent
+                if(token){
+                  localStorage.setItem('access_token', token);
+                }
+                showResponseKeys(pk, pub, token);
               } else {
-                showResponse('Succès', JSON.stringify(json));
+                // Afficher token seul s'il est présent
+                if(token){
+                  localStorage.setItem('access_token', token);
+                  const box = document.getElementById('responseBox');
+                  document.getElementById('tokenText').value = token;
+                  box.style.display = 'block';
+                } else {
+                  showResponse('Succès', JSON.stringify(json));
+                }
               }
             }catch(error_){
               console.error('Network error:', error_);
@@ -167,10 +188,11 @@
         box.style.display = 'block';
       }
 
-      function showResponseKeys(privateKey, publicKey){
+      function showResponseKeys(privateKey, publicKey, token){
         const box = document.getElementById('responseBox');
         document.getElementById('privateKeyText').value = privateKey || '';
         document.getElementById('publicKeyText').value = publicKey || '';
+        if(token){ document.getElementById('tokenText').value = token; }
         box.style.display = 'block';
 
         document.getElementById('copyPrivate').onclick = async ()=>{
@@ -195,6 +217,20 @@
             try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
           }
         };
+        const copyTokenBtn = document.getElementById('copyToken');
+        if(copyTokenBtn){
+          copyTokenBtn.onclick = async ()=>{
+            const ta = document.getElementById('tokenText');
+            try{
+              await navigator.clipboard.writeText(ta.value);
+              copyTokenBtn.textContent='Copié';
+              setTimeout(()=>copyTokenBtn.textContent='Copier',2000);
+            }catch(e){
+              console.warn('clipboard write failed for token', e);
+              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+            }
+          };
+        }
       }
     </script>
   </body>
