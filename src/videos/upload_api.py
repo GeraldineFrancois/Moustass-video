@@ -289,12 +289,21 @@ async def list_videos(
 @router.get("/{video_id}")
 async def get_video_info(
     video_id: str,
+    include_encrypted_key: bool = False,
+    authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
     """Récupère les informations détaillées d'une vidéo"""
     metadata = MetadataMapper(db)
     video = metadata.get_video_by_id(video_id)
-    return metadata.to_dict(video)
+    data = metadata.to_dict(video)
+    if include_encrypted_key:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization requise")
+        get_current_user(authorization)
+        data["encrypted_key"] = video.encrypted_key
+        data["signature"] = video.signature
+    return data
 
 
 # ============================================================================
