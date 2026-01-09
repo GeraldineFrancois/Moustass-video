@@ -11,4 +11,5 @@ python-jose
 python-dotenv
 email-validator
 aiofiles
+httpx
 

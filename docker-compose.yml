@@ -46,10 +46,40 @@ services:
         condition: service_healthy
       auth-service:
         condition: service_healthy
+      security-service:
+        condition: service_healthy
     networks:
       - moustass-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Service de sécurité centralisé
+  security-service:
+    build:
+      context: .
+      dockerfile: src/security/Dockerfile
+    container_name: moustass-security-service
+    ports:
+      - "8003:8003"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: security_user
+      MYSQL_PASSWORD: security_password
+      SNYK_TOKEN: ${SNYK_TOKEN:-}
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+      SONAR_HOST_URL: ${SONAR_HOST_URL:-http://localhost:9000}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - moustass-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -69,6 +99,7 @@ services:
       - mysql-data:/var/lib/mysql
       - ./src/videos/init_database.sql:/docker-entrypoint-initdb.d/01-init-videos.sql
       - ./src/auth/init_database.sql:/docker-entrypoint-initdb.d/02-init-auth.sql
+      - ./src/security/init_database.sql:/docker-entrypoint-initdb.d/03-init-security.sql
     networks:
       - moustass-network
     healthcheck:

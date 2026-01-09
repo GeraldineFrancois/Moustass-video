@@ -8,13 +8,18 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, H
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from uuid import uuid4
+import httpx
 from .database import SessionLocal
 from .storage_manager import StorageManager
 from .metadata_mapper import MetadataMapper
 from .expiration_engine import ExpirationEngine
-from .security import get_current_user, sign_data, verify_signature
+from .security import get_current_user
 import hashlib
 import os
+import base64
+
+# Security Service URL
+SECURITY_SERVICE_URL = "http://security-service:8003"
 
 
 # Configuration
@@ -146,8 +151,22 @@ async def sign_video(
         file_content = await storage.read_video(video.storage_path)
         file_hash = hashlib.sha256(file_content).digest()
         
-        # Signer le hash
-        signature_b64 = sign_data(file_hash, private_key_pem)
+        # Signer via Security service
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{SECURITY_SERVICE_URL}/api/security/sign",
+                    json={
+                        "data_b64": base64.b64encode(file_hash).decode(),
+                        "private_key_pem": private_key_pem
+                    },
+                    params={"service_name": "video"}
+                )
+                response.raise_for_status()
+                result = response.json()
+                signature_b64 = result["signature_b64"]
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Signature failed: {str(e)}")
         
         # Mettre à jour la vidéo
         metadata.update_video_signature(video_id, signature_b64)
@@ -196,12 +215,23 @@ async def verify_video_signature(
         file_content = await storage.read_video(video.storage_path)
         file_hash = hashlib.sha256(file_content).digest()
         
-        # Vérifier la signature
-        is_valid = verify_signature(
-            file_hash,
-            video.signature,
-            public_key_pem
-        )
+        # Vérifier la signature via Security service
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{SECURITY_SERVICE_URL}/api/security/verify",
+                    json={
+                        "data_b64": base64.b64encode(file_hash).decode(),
+                        "signature_b64": video.signature,
+                        "public_key_pem": public_key_pem
+                    },
+                    params={"service_name": "video"}
+                )
+                response.raise_for_status()
+                result = response.json()
+                is_valid = result["is_valid"]
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
         
         return {
             "video_id": video_id,
