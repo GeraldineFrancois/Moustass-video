@@ -19,6 +19,8 @@ import os
 import base64
 
 # Security Service URL
+# SECURITY: HTTP is acceptable here as communication is internal to Docker network
+# In a multi-datacenter deployment, upgrade to HTTPS with mTLS
 SECURITY_SERVICE_URL = "http://security-service:8003"
 
 

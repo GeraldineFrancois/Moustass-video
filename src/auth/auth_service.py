@@ -9,6 +9,8 @@ import httpx
 from . import crud
 
 # Security Service URL (use Docker service name in production)
+# SECURITY: HTTP is acceptable here as communication is internal to Docker network
+# In a multi-datacenter deployment, upgrade to HTTPS with mTLS
 SECURITY_SERVICE_URL = "http://security-service:8003"
 
 

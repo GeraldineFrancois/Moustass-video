@@ -10,14 +10,21 @@ RUN apt-get update \
        curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Créer un utilisateur non-root pour la sécurité
+RUN useradd -m -u 1000 appuser
+
 # Copier les requirements
 COPY requirements.txt .
 
 # Installer les dépendances
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier tout le code
+# Copier tout le code avec permissions correctes
 COPY . .
+RUN chown -R appuser:appuser /app
+
+# Basculer vers l'utilisateur non-root
+USER appuser
 
 # Exposer le port
 EXPOSE 8000
