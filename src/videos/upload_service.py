@@ -4,6 +4,7 @@ Orchestre les composants: Storage Manager, Metadata Mapper, Expiration Engine
 """
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from pathlib import Path
 import aiofiles
@@ -25,6 +26,20 @@ app = FastAPI(
     title="Video Microservice",
     description="Service de gestion vidéo - Architecture Microservice Moustass",
     version="1.0.0"
+)
+
+# Activer CORS pour le tableau de bord admin/auth
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8001",
+        "http://127.0.0.1:8001",
+        "http://localhost:8002",
+        "http://127.0.0.1:8002",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Créer les tables au démarrage
