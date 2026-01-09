@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS videos (
     receiver_id VARCHAR(36) NOT NULL COMMENT 'ID du destinataire',
     storage_path VARCHAR(255) NOT NULL COMMENT 'Chemin de stockage du fichier',
     encrypted_key LONGTEXT NOT NULL COMMENT 'Clé AES chiffrée en RSA-3072',
+    iv VARCHAR(24) NULL COMMENT 'IV AES-GCM en base64 (12 bytes)',
     amount DECIMAL(15, 2) NOT NULL COMMENT 'Montant en EUR',
     status ENUM('UPLOADED', 'SIGNED', 'VERIFIED', 'DOWNLOADED', 'EXPIRED') DEFAULT 'UPLOADED' COMMENT 'Statut de la vidéo',
     signature LONGTEXT NULL COMMENT 'Signature RSA du hash du fichier',

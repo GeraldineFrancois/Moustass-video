@@ -49,6 +49,7 @@ async def upload_video(
     sender_id: str = Form(...),
     receiver_id: str = Form(...),
     encrypted_key: str = Form(...),
+    iv: str = Form(...),
     amount: float = Form(...),
     authorization: str = Header(None),
     db: Session = Depends(get_db)
@@ -90,6 +91,7 @@ async def upload_video(
             receiver_id=receiver_id,
             storage_path=str(storage_path),
             encrypted_key=encrypted_key,
+            iv=iv,
             amount=amount
         )
         
@@ -98,6 +100,7 @@ async def upload_video(
             "user_id": user_id,
             "status": video_record.status.value,
             "is_signed": video_record.is_signed,
+            "iv": video_record.iv,
             "message": "Upload réussi. Signez la vidéo avant qu'elle soit accessible."
         }
     except HTTPException:
