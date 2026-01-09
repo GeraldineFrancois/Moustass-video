@@ -9,7 +9,14 @@ services:
       - "8001:8000"
     environment:
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
-      DATABASE_URL: ${AUTH_DATABASE_URL:-sqlite:///./dev.db}
+      AUTH_DB_HOST: mysql
+      AUTH_DB_USER: auth_user
+      AUTH_DB_PASSWORD: auth_password
+      AUTH_DB_PORT: 3306
+      AUTH_DB_NAME: auth_db
+    depends_on:
+      mysql:
+        condition: service_healthy
     command: uvicorn src.auth.auth_api:app --host 0.0.0.0 --port 8000
     networks:
       - moustass-network
@@ -39,6 +46,8 @@ services:
         condition: service_healthy
       auth-service:
         condition: service_healthy
+      security-service:
+        condition: service_healthy
     networks:
       - moustass-network
     healthcheck:
@@ -47,7 +56,35 @@ services:
       timeout: 5s
       retries: 3
 
-  # Base de données MySQL pour les vidéos
+  # Service de sécurité centralisé
+  security-service:
+    build:
+      context: .
+      dockerfile: src/security/Dockerfile
+    container_name: moustass-security-service
+    ports:
+      - "8003:8003"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: security_user
+      MYSQL_PASSWORD: security_password
+      SNYK_TOKEN: ${SNYK_TOKEN:-}
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+      SONAR_HOST_URL: ${SONAR_HOST_URL:-http://localhost:9000}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - moustass-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Base de données MySQL pour les vidéos et l'authentification
   mysql:
     image: mysql:8.0
     container_name: moustass-mysql
@@ -60,7 +97,9 @@ services:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./src/videos/init_database.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/videos/init_database.sql:/docker-entrypoint-initdb.d/01-init-videos.sql
+      - ./src/auth/init_database.sql:/docker-entrypoint-initdb.d/02-init-auth.sql
+      - ./src/security/init_database.sql:/docker-entrypoint-initdb.d/03-init-security.sql
     networks:
       - moustass-network
     healthcheck:

@@ -8,6 +8,13 @@ CREATE DATABASE IF NOT EXISTS videos_db
 -- Utiliser la base de données
 USE videos_db;
 
+-- Create user if it doesn't exist (MySQL 5.7.6+ syntax)
+CREATE USER IF NOT EXISTS 'video_user'@'%' IDENTIFIED BY 'video_password';
+
+-- Grant all privileges on videos_db to video_user
+GRANT ALL PRIVILEGES ON videos_db.* TO 'video_user'@'%';
+FLUSH PRIVILEGES;
+
 -- Table des vidéos
 CREATE TABLE IF NOT EXISTS videos (
     id VARCHAR(36) PRIMARY KEY COMMENT 'UUID unique',
@@ -16,6 +23,7 @@ CREATE TABLE IF NOT EXISTS videos (
     receiver_id VARCHAR(36) NOT NULL COMMENT 'ID du destinataire',
     storage_path VARCHAR(255) NOT NULL COMMENT 'Chemin de stockage du fichier',
     encrypted_key LONGTEXT NOT NULL COMMENT 'Clé AES chiffrée en RSA-3072',
+    iv VARCHAR(24) NULL COMMENT 'IV AES-GCM en base64 (12 bytes)',
     amount DECIMAL(15, 2) NOT NULL COMMENT 'Montant en EUR',
     status ENUM('UPLOADED', 'SIGNED', 'VERIFIED', 'DOWNLOADED', 'EXPIRED') DEFAULT 'UPLOADED' COMMENT 'Statut de la vidéo',
     signature LONGTEXT NULL COMMENT 'Signature RSA du hash du fichier',
@@ -58,10 +66,6 @@ CREATE EVENT IF NOT EXISTS cleanup_expired_videos_event
 ON SCHEDULE EVERY 1 DAY
 STARTS CURRENT_TIMESTAMP
 DO CALL cleanup_expired_videos();
-
--- Permissions pour l'utilisateur de l'application
-GRANT SELECT, INSERT, UPDATE, DELETE ON videos_db.* TO 'videos_user'@'%';
-FLUSH PRIVILEGES;
 
 -- Données de test (optionnel)
 -- INSERT INTO videos (id, sender_id, receiver_id, storage_path, encrypted_key, amount, status, created_at, expires_at)
