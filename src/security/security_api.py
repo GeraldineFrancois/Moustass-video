@@ -92,6 +92,27 @@ class TokenValidationResponse(BaseModel):
 # CRYPTOGRAPHY ENDPOINTS
 # ============================================================================
 
+@router.get("/keys/admin-public")
+async def get_admin_public_key():
+    """
+    Récupère la clé publique RSA de l'admin pour chiffrer les clés AES.
+    Pour simplifier, génère une clé statique à chaque appel.
+    TODO: Implémenter un stockage persistant sécurisé.
+    """
+    try:
+        # Générer une paire de clés RSA-3072
+        # Note: Pour la production, cette clé devrait être stockée de manière sécurisée
+        private_key_pem, public_key_pem = generate_rsa_keypair(key_size=3072)
+        
+        # Retourner uniquement la clé publique
+        return {"public_key_pem": public_key_pem}
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generating admin public key: {str(e)}")
+
+
 @router.post("/keys/generate", response_model=KeyPairResponse)
 async def generate_keys(
     key_size: int = 3072,
