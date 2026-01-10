@@ -1,7 +1,8 @@
 """ FastAPI endpoints for authentication and minimal admin/client UI. """
 from fastapi import FastAPI, Depends, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from . import schemas, crud, security, auth_service
 from .database import init_db, get_db
 from . import database
@@ -11,6 +12,11 @@ import os
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), 'templates'))
 
 app = FastAPI(title='Auth Service')
+
+# Monter le répertoire UI pour servir les nouvelles pages admin/client
+ui_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ui')
+if os.path.exists(ui_dir):
+	app.mount('/ui', StaticFiles(directory=ui_dir, html=True), name='ui')
 
 
 @app.on_event('startup')
@@ -223,6 +229,11 @@ def delete_account(email: str = Form(...), db: Session = Depends(get_db)):
 
 @app.get('/admin/dashboard', response_class=HTMLResponse)
 def admin_dashboard(request: Request):
+	"""Redirige vers la nouvelle page admin UI."""
+	ui_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ui', 'index-admin.html')
+	if os.path.exists(ui_path):
+		return FileResponse(ui_path)
+	# Fallback vers l'ancienne page si la nouvelle n'existe pas
 	return templates.TemplateResponse('admin.html', {'request': request})
 
 
