@@ -1,18 +1,18 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
 ENV PYTHONPATH=/app
 
 # Installer les dépendances système
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     gcc \
-    default-libmysqlclient-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    musl-dev \
+    mariadb-dev \
+    curl
 
 # Créer un utilisateur non-root pour la sécurité
-RUN useradd -m -u 1000 appuser
+RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 
 # Copier et installer les dépendances Python
 COPY requirements.txt .

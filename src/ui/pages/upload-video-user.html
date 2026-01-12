@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="../css/index.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC"></script>
     <style>
         #videoPreview {
             width: 100%;
@@ -36,7 +36,7 @@
             top: 10px;
             right: 10px;
             background: red;
-            color: white;
+            color: #000000;
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: bold;
@@ -106,12 +106,12 @@
 
                             <!-- Clés de chiffrement (générées automatiquement) -->
                             <div class="mb-3">
-                                <label class="form-label"><i class="fa-solid fa-key"></i> Clé AES chiffrée (générée automatiquement)</label>
+                                <label for="encryptedKey" class="form-label"><i class="fa-solid fa-key"></i> Clé AES chiffrée (générée automatiquement)</label>
                                 <textarea id="encryptedKey" class="form-control" rows="2" readonly placeholder="Sera généré automatiquement avant l'enregistrement"></textarea>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label"><i class="fa-solid fa-hashtag"></i> IV AES-GCM (généré automatiquement)</label>
+                                <label for="ivAES" class="form-label"><i class="fa-solid fa-hashtag"></i> IV AES-GCM (généré automatiquement)</label>
                                 <input type="text" id="ivAES" class="form-control" readonly placeholder="Sera généré automatiquement avant l'enregistrement" />
                             </div>
 

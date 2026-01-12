@@ -9,6 +9,23 @@ from . import database
 from sqlalchemy.orm import Session
 import os
 
+# Constants for repeated string literals
+HEADER_AUTHORIZATION = 'authorization'
+HEADER_CONTENT_TYPE = 'content-type'
+BEARER_PREFIX = 'bearer '
+TOKEN_TYPE_BEARER = 'bearer'
+ROLE_ADMIN = 'ADMIN'
+ROLE_USER = 'USER'
+ERROR_MISSING_BEARER = 'Missing bearer token'
+ERROR_INVALID_TOKEN = 'Invalid token'
+ERROR_INVALID_CREDENTIALS = 'Invalid credentials'
+ERROR_USER_NOT_FOUND = 'User not found'
+ERROR_PASSWORDS_MISMATCH = 'Passwords do not match'
+ERROR_PASSWORD_STRENGTH = 'Password does not meet strength requirements'
+ERROR_EMAIL_REGISTERED = 'Email already registered'
+ERROR_ADMIN_REQUIRED = 'Admin access required'
+CONTENT_TYPE_FORM = 'application/x-www-form-urlencoded'
+
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), 'templates'))
 
 app = FastAPI(title='Auth Service')
@@ -44,7 +61,7 @@ def services_portal(request: Request):
 # -------------------- Helpers -------------------------------------------------
 def _is_form_request(request: Request) -> bool:
 	"""Return True if request likely came from an HTML form (x-www-form-urlencoded)."""
-	return request.headers.get('content-type', '').startswith('application/x-www-form-urlencoded')
+	return request.headers.get(HEADER_CONTENT_TYPE, '').startswith(CONTENT_TYPE_FORM)
 
 
 async def _parse_request(request: Request, fields: tuple):
@@ -132,21 +149,21 @@ async def signup_admin(request: Request, db: Session = Depends(get_db)):
 		raise HTTPException(status_code=422, detail=str(e))
 
 	if user_in.password != user_in.confirm_password:
-		raise HTTPException(status_code=400, detail='Passwords do not match')
+		raise HTTPException(status_code=400, detail=ERROR_PASSWORDS_MISMATCH)
 	if not security.validate_password_strength(user_in.password):
-		raise HTTPException(status_code=400, detail='Password does not meet strength requirements')
+		raise HTTPException(status_code=400, detail=ERROR_PASSWORD_STRENGTH)
 	if crud.get_user_by_email(db, user_in.email):
-		raise HTTPException(status_code=400, detail='Email already registered')
+		raise HTTPException(status_code=400, detail=ERROR_EMAIL_REGISTERED)
 
 	try:
-		user_obj, private_key = auth_service.create_user_with_keys(db, user_in, role='ADMIN')
+		user_obj, private_key = auth_service.create_user_with_keys(db, user_in, role=ROLE_ADMIN)
 		# Générer aussi un JWT pour que l'utilisateur puisse s'authentifier immédiatement
 		token = security.create_access_token({'sub': user_obj.email, 'role': user_obj.role, 'user_id': user_obj.id})
 		return {
 			'user': schemas.UserOut.from_orm(user_obj),
 			'private_key': private_key,
 			'access_token': token,
-			'token_type': 'bearer'
+			'token_type': TOKEN_TYPE_BEARER
 		}
 	except Exception:
 		import traceback
@@ -167,21 +184,21 @@ async def signup_client(request: Request, db: Session = Depends(get_db)):
 		raise HTTPException(status_code=422, detail=str(e))
 
 	if user_in.password != user_in.confirm_password:
-		raise HTTPException(status_code=400, detail='Passwords do not match')
+		raise HTTPException(status_code=400, detail=ERROR_PASSWORDS_MISMATCH)
 	if not security.validate_password_strength(user_in.password):
-		raise HTTPException(status_code=400, detail='Password does not meet strength requirements')
+		raise HTTPException(status_code=400, detail=ERROR_PASSWORD_STRENGTH)
 	if crud.get_user_by_email(db, user_in.email):
-		raise HTTPException(status_code=400, detail='Email already registered')
+		raise HTTPException(status_code=400, detail=ERROR_EMAIL_REGISTERED)
 
 	try:
-		user_obj, private_key = auth_service.create_user_with_keys(db, user_in, role='USER')
+		user_obj, private_key = auth_service.create_user_with_keys(db, user_in, role=ROLE_USER)
 		# Générer aussi un JWT pour que l'utilisateur puisse s'authentifier immédiatement
 		token = security.create_access_token({'sub': user_obj.email, 'role': user_obj.role, 'user_id': user_obj.id})
 		return {
 			'user': schemas.UserOut.from_orm(user_obj),
 			'private_key': private_key,
 			'access_token': token,
-			'token_type': 'bearer'
+			'token_type': TOKEN_TYPE_BEARER
 		}
 	except Exception:
 		import traceback
@@ -200,7 +217,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
 
 	user = crud.get_user_by_email(db, payload.email)
 	if not user:
-		raise HTTPException(status_code=401, detail='Invalid credentials')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_CREDENTIALS)
 
 	# Centralized verification that handles legacy formats and performs
 	# migration to the current hash scheme on success.
@@ -210,19 +227,19 @@ async def login(request: Request, db: Session = Depends(get_db)):
 		logger.warning('Login failed for %s; pw_len=%d hash_prefix=%s salt_len=%d',
 					   payload.email, len(payload.password), (user.password_hash or '')[:10],
 					   len(user.password_salt or ''))
-		raise HTTPException(status_code=401, detail='Invalid credentials')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_CREDENTIALS)
 
 	# Successful login: return JWT token
 	token = security.create_access_token({'sub': user.email, 'role': user.role, 'user_id': user.id})
 	crud.log_event(db, 'login', user.id, success=1)
-	return {'access_token': token, 'token_type': 'bearer', 'role': user.role}
+	return {'access_token': token, 'token_type': TOKEN_TYPE_BEARER, 'role': user.role}
 
 
 @app.post('/delete_account')
 def delete_account(email: str = Form(...), db: Session = Depends(get_db)):
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
 	crud.delete_user(db, u.id)
 	return {'deleted': True}
 
@@ -270,34 +287,34 @@ def me(request: Request, db: Session = Depends(get_db)):
 	Development helper used by dashboards to fetch the authenticated user's
 	public key and email. Returns 401 if token missing/invalid.
 	"""
-	auth = request.headers.get('authorization', '')
-	if not auth.lower().startswith('bearer '):
-		raise HTTPException(status_code=401, detail='Missing bearer token')
+	auth = request.headers.get(HEADER_AUTHORIZATION, '')
+	if not auth.lower().startswith(BEARER_PREFIX):
+		raise HTTPException(status_code=401, detail=ERROR_MISSING_BEARER)
 	token = auth.split(' ', 1)[1]
 	payload = security.decode_access_token(token)
 	if not payload:
-		raise HTTPException(status_code=401, detail='Invalid token')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_TOKEN)
 	email = payload.get('sub')
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
 	return {'email': u.email, 'public_key': u.public_key, 'role': u.role}
 
 
 @app.get('/logs')
 def my_logs(request: Request, db: Session = Depends(get_db)):
 	"""Return recent connection logs for the authenticated user."""
-	auth = request.headers.get('authorization', '')
-	if not auth.lower().startswith('bearer '):
-		raise HTTPException(status_code=401, detail='Missing bearer token')
+	auth = request.headers.get(HEADER_AUTHORIZATION, '')
+	if not auth.lower().startswith(BEARER_PREFIX):
+		raise HTTPException(status_code=401, detail=ERROR_MISSING_BEARER)
 	token = auth.split(' ', 1)[1]
 	payload = security.decode_access_token(token)
 	if not payload:
-		raise HTTPException(status_code=401, detail='Invalid token')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_TOKEN)
 	email = payload.get('sub')
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
 	logs = crud.get_logs_for_user(db, u.id)
 	# serialize minimal fields
 	out = []
@@ -309,19 +326,19 @@ def my_logs(request: Request, db: Session = Depends(get_db)):
 @app.get('/admin/logs')
 def admin_logs(request: Request, db: Session = Depends(get_db)):
 	"""Admin-only: return recent logs for all users."""
-	auth = request.headers.get('authorization', '')
-	if not auth.lower().startswith('bearer '):
-		raise HTTPException(status_code=401, detail='Missing bearer token')
+	auth = request.headers.get(HEADER_AUTHORIZATION, '')
+	if not auth.lower().startswith(BEARER_PREFIX):
+		raise HTTPException(status_code=401, detail=ERROR_MISSING_BEARER)
 	token = auth.split(' ', 1)[1]
 	payload = security.decode_access_token(token)
 	if not payload:
-		raise HTTPException(status_code=401, detail='Invalid token')
+		raise HTTPException(status_code=401, detail=ERROR_INVALID_TOKEN)
 	email = payload.get('sub')
 	u = crud.get_user_by_email(db, email)
 	if not u:
-		raise HTTPException(status_code=404, detail='User not found')
-	if (u.role or '').upper() != 'ADMIN':
-		raise HTTPException(status_code=403, detail='Admin access required')
+		raise HTTPException(status_code=404, detail=ERROR_USER_NOT_FOUND)
+	if (u.role or '').upper() != ROLE_ADMIN:
+		raise HTTPException(status_code=403, detail=ERROR_ADMIN_REQUIRED)
 	logs = crud.get_all_logs(db)
 	out = []
 	# include user role by querying user per entry (keeps it simple)
