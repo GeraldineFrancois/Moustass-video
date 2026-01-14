@@ -100,9 +100,9 @@
                 localStorage.setItem('access_token', token);
                 // redirect based on role
                 if(role.toUpperCase().includes('ADMIN')){
-                  globalThis.location.href = '/admin/dashboard';
+                  globalThis.location.href = '/ui/index-admin.html';
                 }else{
-                  globalThis.location.href = '/client/dashboard';
+                  globalThis.location.href = '/ui/index-user.html';
                 }
               }else{
                 showResponse('Login', 'No access token returned');

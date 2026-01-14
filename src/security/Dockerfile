@@ -1,24 +1,24 @@
 # Security Microservice
 
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     gcc \
     g++ \
-    libssl-dev \
+    musl-dev \
+    openssl-dev \
     curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    git
 
 # Install Snyk CLI
 RUN curl -Lo /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-linux && \
     chmod +x /usr/local/bin/snyk
 
 # Créer un utilisateur non-root pour la sécurité
-RUN useradd -m -u 1000 appuser
+RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 
 # Copy requirements
 COPY requirements.txt .

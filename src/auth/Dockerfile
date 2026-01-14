@@ -1,17 +1,14 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
 ENV PYTHONPATH=/app
 
 # Outils systèmes requis pour le healthcheck (curl)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 # Créer un utilisateur non-root pour la sécurité
-RUN useradd -m -u 1000 appuser
+RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 
 # Copier les requirements
 COPY requirements.txt .
