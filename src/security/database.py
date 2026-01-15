@@ -20,41 +20,47 @@ MYSQL_DB = "security_db"
 
 DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
 
-# Retry logic for database connection
-max_retries = 10
-retry_count = 0
-engine = None
+# If running under tests, use in-memory SQLite to avoid network DB calls
+if os.getenv("TESTING") == "1":
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
+    print("⚠️ TESTING mode enabled for security DB: using in-memory SQLite")
+else:
+    # Retry logic for database connection
+    max_retries = 10
+    retry_count = 0
+    engine = None
 
-while retry_count < max_retries:
-    try:
-        engine = create_engine(
-            DATABASE_URL,
-            pool_pre_ping=True,
-            pool_recycle=3600,
-            echo=False,
-            connect_args={
-                "connect_timeout": 10,
-            }
-        )
-        # Test connection
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        print(f"✅ Successfully connected to MySQL at {MYSQL_HOST}:{MYSQL_PORT}")
-        break
-    except Exception as e:
-        retry_count += 1
-        if retry_count >= max_retries:
-            print(f"❌ Failed to connect to MySQL after {max_retries} attempts")
-            print(f"Error: {str(e)}")
-            sys.exit(1)
-        
-        wait_time = min(2 ** retry_count, 30)  # Exponential backoff, max 30s
-        print(f"⏳ MySQL not ready. Attempt {retry_count}/{max_retries}. Retrying in {wait_time}s...")
-        time.sleep(wait_time)
+    while retry_count < max_retries:
+        try:
+            engine = create_engine(
+                DATABASE_URL,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                echo=False,
+                connect_args={
+                    "connect_timeout": 10,
+                }
+            )
+            # Test connection
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            print(f"✅ Successfully connected to MySQL at {MYSQL_HOST}:{MYSQL_PORT}")
+            break
+        except Exception as e:
+            retry_count += 1
+            if retry_count >= max_retries:
+                print(f"❌ Failed to connect to MySQL after {max_retries} attempts")
+                print(f"Error: {str(e)}")
+                sys.exit(1)
+            
+            wait_time = min(2 ** retry_count, 30)  # Exponential backoff, max 30s
+            print(f"⏳ MySQL not ready. Attempt {retry_count}/{max_retries}. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
 
 
 def get_db():
