@@ -7,8 +7,68 @@ import os
 import subprocess
 import json
 import re
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from pathlib import Path
+
+
+def validate_path(path: str, base_dir: Optional[str] = None) -> bool:
+    """
+    Validate path to prevent directory traversal attacks.
+    
+    Args:
+        path: Path to validate
+        base_dir: Base directory to restrict paths to
+    
+    Returns:
+        True if path is valid and safe, False otherwise
+    """
+    try:
+        resolved_path = Path(path).resolve()
+        
+        # Check if path exists
+        if not resolved_path.exists():
+            return False
+        
+        # If base_dir is provided, ensure path is within it
+        if base_dir:
+            resolved_base = Path(base_dir).resolve()
+            try:
+                resolved_path.relative_to(resolved_base)
+            except ValueError:
+                # Path is outside base_dir
+                return False
+        
+        return True
+    except Exception:
+        return False
+
+
+def validate_scan_arguments(args: List[str]) -> bool:
+    """
+    Validate command line arguments to prevent injection attacks.
+    
+    Args:
+        args: List of command arguments
+    
+    Returns:
+        True if arguments are safe, False otherwise
+    """
+    if not args:
+        return True
+    
+    # Dangerous characters that could lead to command injection
+    dangerous_chars = [';', '|', '&', '`', '$', '(', ')', '<', '>']
+    
+    for arg in args:
+        # Check for dangerous characters
+        if any(char in arg for char in dangerous_chars):
+            return False
+        
+        # Check for shell expansion patterns
+        if '$(' in arg or '`' in arg:
+            return False
+    
+    return True
 
 
 class SecurityScanner:

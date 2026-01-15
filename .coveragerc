@@ -1,0 +1,54 @@
+[run]
+# Configuration coverage pour SonarQube
+source = src
+omit =
+    # Tests eux-mêmes
+    tests/*
+    */tests/*
+    
+    # Fichiers de configuration
+    */__pycache__/*
+    */site-packages/*
+    .virtualenv/*
+    venv/*
+    
+    # Fichiers d'initialisation vides
+    */__init__.py
+    
+    # Scripts temporaires
+    */test_*.py
+    
+    # Migrations et init DB
+    */init_database.sql
+    */database_old.py
+    
+    # Static files
+    */static/*
+    */templates/*
+    */ui/*
+
+[report]
+# Exclusion de patterns dans les rapports
+exclude_lines =
+    # Lignes standard à exclure
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    
+    # Debug only
+    if settings.DEBUG
+    if DEBUG
+    
+precision = 2
+show_missing = True
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml
