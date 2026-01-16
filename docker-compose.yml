@@ -8,12 +8,12 @@ services:
     ports:
       - "8001:8000"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
       AUTH_DB_HOST: mysql
-      AUTH_DB_USER: auth_user
-      AUTH_DB_PASSWORD: auth_password
+      AUTH_DB_USER: ${AUTH_DB_USER:-auth_user}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
       AUTH_DB_PORT: 3306
-      AUTH_DB_NAME: auth_db
+      AUTH_DB_NAME: ${AUTH_DB_NAME:-auth_db}
     depends_on:
       mysql:
         condition: service_healthy
@@ -35,8 +35,8 @@ services:
     ports:
       - "8002:8000"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
-      DATABASE_URL: ${VIDEO_DATABASE_URL:-mysql+pymysql://video_user:video_password@mysql:3306/videos_db}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      DATABASE_URL: ${VIDEO_DATABASE_URL}
       UPLOAD_DIR: /app/uploads
     volumes:
       - videos-storage:/app/uploads
@@ -65,11 +65,11 @@ services:
     ports:
       - "8003:8003"
     environment:
-      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
-      MYSQL_USER: security_user
-      MYSQL_PASSWORD: security_password
+      MYSQL_USER: ${SECURITY_DB_USER:-security_user}
+      MYSQL_PASSWORD: ${SECURITY_DB_PASSWORD}
       SNYK_TOKEN: ${SNYK_TOKEN:-}
       SONAR_TOKEN: ${SONAR_TOKEN:-}
       SONAR_HOST_URL: ${SONAR_HOST_URL:-http://localhost:9000}
@@ -89,10 +89,10 @@ services:
     image: mysql:8.0
     container_name: moustass-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: videos_db
-      MYSQL_USER: video_user
-      MYSQL_PASSWORD: video_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-videos_db}
+      MYSQL_USER: ${VIDEO_DB_USER:-video_user}
+      MYSQL_PASSWORD: ${VIDEO_DB_PASSWORD}
     ports:
       - "3307:3306"
     volumes:

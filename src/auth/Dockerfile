@@ -1,18 +1,14 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
 ENV PYTHONPATH=/app
 
 # Outils systèmes requis pour le healthcheck (curl)
-RUN set -eux; \
-    CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2 || echo stable); \
-    printf '%s\n' "deb https://deb.debian.org/debian ${CODENAME} main" "deb https://deb.debian.org/debian ${CODENAME}-updates main" "deb https://deb.debian.org/debian-security ${CODENAME}-security main" > /etc/apt/sources.list; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-       ca-certificates \
-       curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
+
+# Créer un utilisateur non-root pour la sécurité
+RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 
 # Copier les requirements
 COPY requirements.txt .
@@ -20,8 +16,12 @@ COPY requirements.txt .
 # Installer les dépendances
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier tout le code
+# Copier tout le code avec permissions correctes
 COPY . .
+RUN chown -R appuser:appuser /app
+
+# Basculer vers l'utilisateur non-root
+USER appuser
 
 # Exposer le port
 EXPOSE 8000

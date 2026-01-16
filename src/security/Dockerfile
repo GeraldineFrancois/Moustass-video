@@ -1,26 +1,24 @@
 # Security Microservice
 
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
 # Install system dependencies
-RUN set -eux; \
-    CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2 || echo stable); \
-    printf '%s\n' "deb https://deb.debian.org/debian ${CODENAME} main" "deb https://deb.debian.org/debian ${CODENAME}-updates main" "deb https://deb.debian.org/debian-security ${CODENAME}-security main" > /etc/apt/sources.list; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
+RUN apk add --no-cache \
     gcc \
     g++ \
-    libssl-dev \
+    musl-dev \
+    openssl-dev \
     curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    git
 
 # Install Snyk CLI
 RUN curl -Lo /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-linux && \
     chmod +x /usr/local/bin/snyk
+
+# Créer un utilisateur non-root pour la sécurité
+RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 
 # Copy requirements
 COPY requirements.txt .
@@ -30,8 +28,12 @@ COPY requirements-dev.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
-# Copy source code
+# Copy source code avec permissions correctes
 COPY src/ /app/src/
+RUN chown -R appuser:appuser /app
+
+# Basculer vers l'utilisateur non-root
+USER appuser
 
 # Expose port
 EXPOSE 8003

@@ -1,30 +1,32 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
 ENV PYTHONPATH=/app
 
 # Installer les dépendances système
-RUN set -eux; \
-    CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2 || echo stable); \
-    printf '%s\n' "deb https://deb.debian.org/debian ${CODENAME} main" "deb https://deb.debian.org/debian ${CODENAME}-updates main" "deb https://deb.debian.org/debian-security ${CODENAME}-security main" > /etc/apt/sources.list; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
+RUN apk add --no-cache \
     gcc \
-    default-libmysqlclient-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    musl-dev \
+    mariadb-dev \
+    curl
+
+# Créer un utilisateur non-root pour la sécurité
+RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 
 # Copier et installer les dépendances Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier le code
+# Copier le code avec permissions correctes
 COPY . .
+RUN chown -R appuser:appuser /app
 
-# Créer le dossier uploads
-RUN mkdir -p /app/uploads
+# Créer le dossier uploads avec permissions correctes
+RUN mkdir -p /app/uploads && chown -R appuser:appuser /app/uploads
+
+# Basculer vers l'utilisateur non-root
+USER appuser
 
 # Exposer le port interne
 EXPOSE 8000

@@ -10,7 +10,12 @@ from jose import jwt, JWTError
 pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 
 # JWT configuration
-JWT_SECRET = os.getenv('JWT_SECRET', 'devsecret')
+JWT_SECRET = os.getenv('JWT_SECRET')
+if not JWT_SECRET or len(JWT_SECRET) < 32:
+    raise ValueError(
+        "JWT_SECRET must be set and at least 32 characters long. "
+        "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+    )
 JWT_ALGO = 'HS256'
 # Token lifetime in minutes (default one day)
 JWT_EXPIRES_MINUTES = 60 * 24
