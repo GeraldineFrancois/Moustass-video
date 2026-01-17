@@ -41,7 +41,7 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="mb-3"><i class="fa-solid fa-key me-2"></i>Authentification</h5>
-            
+
             <!-- Token JWT -->
             <div class="mb-4 p-3 bg-info bg-opacity-10 rounded">
               <label class="form-label"><strong>🔐 Token JWT (Bearer) - SECTION BLEUE</strong></label>
@@ -76,7 +76,7 @@
             <!-- Clés RSA -->
             <div class="mb-3">
               <h6 class="mb-3"><i class="fa-solid fa-lock me-2"></i>Vos Clés RSA</h6>
-              
+
               <!-- Clé Privée -->
               <div class="mb-3 p-2 border-start border-danger border-4">
                 <label class="form-label text-danger"><strong>🔑 Clé PRIVÉE - SECTION ROUGE - UTILISÉE POUR SIGNER</strong></label>
@@ -109,7 +109,7 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="mb-3"><i class="fa-solid fa-upload me-2"></i>Uploader une Vidéo</h5>
-            
+
             <!-- Guide d'utilisation -->
             <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
               <strong>📖 Guide rapide :</strong><br/>
@@ -127,8 +127,8 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="videoFile" class="form-label"><strong>Vidéo (.mp4 / .ts)</strong></label>
-                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.ts" required />
-                  <div class="form-text">Formats autorisés uniquement.</div>
+                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.webm,.ts,video/mp4,video/webm,video/*" capture="user" required />
+                  <div class="form-text">Formats autorisés: .mp4, .webm, .ts (webcam: video/webm / video/*)</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Montant (RS)</strong></label>
@@ -220,7 +220,7 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-info" role="alert">
-            <strong>⚠️ Important :</strong> Utilisez votre clé <strong>PRIVÉE</strong> RSA (celle-ci commence par <code>-----BEGIN PRIVATE KEY-----</code>), 
+            <strong>⚠️ Important :</strong> Utilisez votre clé <strong>PRIVÉE</strong> RSA (celle-ci commence par <code>-----BEGIN PRIVATE KEY-----</code>),
             PAS la clé publique (qui commence par <code>-----BEGIN PUBLIC KEY-----</code>).
           </div>
           <div class="mb-3">
@@ -306,18 +306,18 @@
     // Token actions
     document.getElementById('saveTokenBtn').addEventListener('click', () => {
       const t = document.getElementById('tokenInput').value.trim();
-      
+
       // Validation : un JWT commence toujours par "ey"
       if (t && !t.startsWith('ey')) {
         alert('❌ ERREUR : Vous avez probablement collé une clé RSA au lieu d\'un token JWT.\n\nUn token JWT commence par "ey".\n\nVotre token JWT se trouve dans la réponse de login/signup, pas dans les fichiers des clés RSA.');
         return;
       }
-      
+
       setToken(t);
       applyAuthContext();
       if (t) alert('✅ Token enregistré avec succès!');
     });
-    
+
     document.getElementById('clearTokenBtn').addEventListener('click', () => {
       setToken('');
       applyAuthContext();
@@ -423,17 +423,17 @@
       const videoId = document.getElementById('signVideoId').textContent;
       const privateKey = document.getElementById('privateKeyPem').value.trim();
       if (!privateKey) { alert('Veuillez coller votre clé privée PEM'); return; }
-      
+
       // Validation : vérifier que c'est bien une CLÉS PRIVÉE et pas une clé publique
       if (!privateKey.includes('BEGIN PRIVATE KEY')) {
         alert('❌ ERREUR : Vous avez collé une clé publique ou un format incorrect.\n\nAssurez-vous de coller une clé qui commence par :\n-----BEGIN PRIVATE KEY-----\n\net NON pas :\n-----BEGIN PUBLIC KEY-----');
         return;
       }
-      
+
       // Construire le FormData correctement
       const form = new FormData();
       form.append('private_key_pem', privateKey);
-      
+
       try {
         console.log(`Signature: POST ${API_BASE}/${videoId}/sign`);
         const resp = await fetch(`${API_BASE}/${videoId}/sign`, {
@@ -441,15 +441,15 @@
           headers: { 'Authorization': `Bearer ${token}` },
           body: form
         });
-        
+
         const respText = await resp.text();
         console.log(`Signature response status: ${resp.status}`);
         console.log(`Signature response body: ${respText}`);
-        
+
         if (!resp.ok) {
           throw new Error(`HTTP ${resp.status}: ${respText}`);
         }
-        
+
         const data = JSON.parse(respText);
         alert('✅ Signature OK: ' + data.message);
         signModalInstance?.hide();
@@ -480,13 +480,13 @@
         // Générer un IV aléatoire de 12 octets (recommandé pour AES-GCM)
         const iv = new Uint8Array(12);
         crypto.getRandomValues(iv);
-        
+
         // Convertir en Base64
         const ivBase64 = btoa(String.fromCharCode(...iv));
-        
+
         // Afficher dans le champ
         document.getElementById('ivAES').value = ivBase64;
-        
+
         console.log('✅ IV généré:', ivBase64);
         console.log('   Longueur:', iv.length, 'octets');
         console.log('   Base64 length:', ivBase64.length, 'caractères');
@@ -500,12 +500,12 @@
     function copyIV() {
       const ivInput = document.getElementById('ivAES');
       const ivValue = ivInput.value.trim();
-      
+
       if (!ivValue) {
         alert('❌ Veuillez d\'abord générer un IV en cliquant sur "Générer IV"');
         return;
       }
-      
+
       ivInput.select();
       document.execCommand('copy');
       alert('✅ IV copié dans le presse-papier!\n\nIV: ' + ivValue);

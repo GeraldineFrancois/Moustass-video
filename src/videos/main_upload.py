@@ -42,13 +42,12 @@ if __name__ == "__main__":
     print("   🌐 Interface Web: http://localhost:8002")
     print("   💾 Base de données: MySQL videos_db")
     print("="*70 + "\n")
-    
+
     # Démarrer le serveur
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=8002,
         log_level="info",
-        reload=False  # Set to True only for development
-    )
+        reload=False,  # Set to True only for development
     )
