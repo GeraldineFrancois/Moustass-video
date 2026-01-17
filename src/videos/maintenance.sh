@@ -38,7 +38,7 @@ print_warning() {
 # Vérifier la santé du service
 health_check() {
     print_header "Vérification de la santé du service"
-    
+
     if curl -s http://localhost:$SERVICE_PORT/health > /dev/null 2>&1; then
         print_success "Service en bonne santé (port $SERVICE_PORT)"
     else
@@ -50,7 +50,7 @@ health_check() {
 # Afficher les logs
 show_logs() {
     print_header "Logs du service"
-    if [ -f "$LOG_FILE" ]; then
+    if [[ -f "$LOG_FILE" ]]; then
         tail -50 "$LOG_FILE"
     else
         print_warning "Fichier de log non trouvé: $LOG_FILE"
@@ -60,16 +60,16 @@ show_logs() {
 # Obtenir les statistiques
 stats() {
     print_header "Statistiques du service"
-    
+
     # Nombre de fichiers
-    if [ -d "$UPLOADS_DIR" ]; then
+    if [[ -d "$UPLOADS_DIR" ]]; then
         FILE_COUNT=$(find "$UPLOADS_DIR" -type f | wc -l)
         DIR_SIZE=$(du -sh "$UPLOADS_DIR" | cut -f1)
         echo -e "Dossier uploads: $UPLOADS_DIR"
         echo -e "Fichiers stockés: $FILE_COUNT"
         echo -e "Taille totale: $DIR_SIZE"
     fi
-    
+
     echo ""
     print_header "État du service"
     curl -s http://localhost:$SERVICE_PORT/api/videos/list | \
@@ -79,17 +79,17 @@ stats() {
 # Nettoyer les fichiers
 cleanup() {
     print_header "Nettoyage des fichiers temporaires"
-    
-    if [ -d "$UPLOADS_DIR" ]; then
+
+    if [[ -d "$UPLOADS_DIR" ]]; then
         # Supprimer les fichiers vides
         find "$UPLOADS_DIR" -type f -size 0 -delete
         print_success "Fichiers vides supprimés"
-        
+
         # Supprimer les fichiers de plus de 90 jours
         find "$UPLOADS_DIR" -type f -mtime +90 -delete
         print_success "Fichiers expirés supprimés (90+ jours)"
     fi
-    
+
     # Nettoyer les fichiers de cache
     find "$SCRIPT_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     find "$SCRIPT_DIR" -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -99,20 +99,20 @@ cleanup() {
 # Sauvegarder la base de données
 backup() {
     print_header "Sauvegarde de la base de données"
-    
+
     BACKUP_DIR="$SCRIPT_DIR/backups"
     mkdir -p "$BACKUP_DIR"
-    
+
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_FILE="$BACKUP_DIR/videos_db_$TIMESTAMP.sql"
-    
+
     if mysqldump -u videos_user -p videos_db > "$BACKUP_FILE" 2>/dev/null; then
         print_success "Sauvegarde créée: $BACKUP_FILE"
-        
+
         # Compresser
         gzip "$BACKUP_FILE"
         print_success "Sauvegarde compressée"
-        
+
         # Garder que les 10 dernières
         ls -t "$BACKUP_DIR"/*.gz | tail -n +11 | xargs -r rm
     else
@@ -124,31 +124,31 @@ backup() {
 # Installer les dépendances
 install_deps() {
     print_header "Installation des dépendances"
-    
+
     if ! command -v pip &> /dev/null; then
         print_error "pip n'est pas installé"
         return 1
     fi
-    
+
     pip install --upgrade pip setuptools wheel
     pip install -r "$SCRIPT_DIR/requirements.txt"
-    
+
     print_success "Dépendances installées"
 }
 
 # Tester l'API
 test_api() {
     print_header "Test de l'API"
-    
+
     echo "1. Health check..."
     curl -s http://localhost:$SERVICE_PORT/health | jq '.' || print_error "Échec"
-    
+
     echo -e "\n2. Lister les vidéos..."
     curl -s http://localhost:$SERVICE_PORT/api/videos/list | jq '.' || print_error "Échec"
-    
+
     echo -e "\n3. Créer un fichier de test..."
     dd if=/dev/zero bs=1M count=5 of="$SCRIPT_DIR/test-video.mp4" 2>/dev/null
-    
+
     echo -e "\n4. Upload de test..."
     RESPONSE=$(curl -s -X POST http://localhost:$SERVICE_PORT/api/videos/upload \
         -F "file=@$SCRIPT_DIR/test-video.mp4" \
@@ -156,23 +156,23 @@ test_api() {
         -F "receiver_id=ADMIN" \
         -F "encrypted_key=test-key" \
         -F "amount=100.00")
-    
+
     echo "$RESPONSE" | jq '.' || print_error "Échec"
-    
+
     VIDEO_ID=$(echo "$RESPONSE" | jq -r '.video_id' 2>/dev/null)
-    
-    if [ ! -z "$VIDEO_ID" ] && [ "$VIDEO_ID" != "null" ]; then
+
+    if [[ -n "$VIDEO_ID" ]] && [[ "$VIDEO_ID" != "null" ]]; then
         echo -e "\n5. Récupérer les détails..."
         curl -s http://localhost:$SERVICE_PORT/api/videos/$VIDEO_ID | jq '.' || print_error "Échec"
-        
+
         echo -e "\n6. Supprimer..."
         curl -s -X DELETE http://localhost:$SERVICE_PORT/api/videos/$VIDEO_ID | jq '.' || print_error "Échec"
-        
+
         print_success "Tests passés ✅"
     else
         print_error "Échec de l'upload de test"
     fi
-    
+
     # Cleanup
     rm -f "$SCRIPT_DIR/test-video.mp4"
 }
@@ -180,17 +180,17 @@ test_api() {
 # Démarrer le service
 start() {
     print_header "Démarrage du service"
-    
+
     if pgrep -f "python main_upload.py" > /dev/null; then
         print_warning "Service déjà en cours d'exécution"
         return 1
     fi
-    
+
     cd "$SCRIPT_DIR"
     python main_upload.py >> "$LOG_FILE" 2>&1 &
-    
+
     sleep 2
-    
+
     if pgrep -f "python main_upload.py" > /dev/null; then
         print_success "Service démarré (PID: $(pgrep -f 'python main_upload.py'))"
     else
@@ -202,7 +202,7 @@ start() {
 # Arrêter le service
 stop() {
     print_header "Arrêt du service"
-    
+
     if pgrep -f "python main_upload.py" > /dev/null; then
         pkill -f "python main_upload.py"
         sleep 1

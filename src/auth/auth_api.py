@@ -114,6 +114,24 @@ def _get_payload_from_request(request: Request) -> Dict:
 	return payload
 
 
+def _verify_and_migrate_password(user, password: str, db: Session) -> bool:
+	"""Verify a plaintext password against the stored hash.
+
+	This helper centralizes password verification so we can transparently
+	add migration steps for legacy hashes in future. It returns True when
+	the password matches the stored hash, False otherwise.
+	"""
+	try:
+		# reference db to avoid unused-parameter lint complaints; may be
+		# used later for migration writes
+		_ = db
+		if not user or not getattr(user, "password_hash", None):
+			return False
+		return security.verify_password(password, user.password_hash)
+	except Exception:
+		return False
+
+
 # -------------------- Public endpoints --------------------------------------
 @app.get("/", response_class=HTMLResponse)
 def login_page(request: Request) -> HTMLResponse:

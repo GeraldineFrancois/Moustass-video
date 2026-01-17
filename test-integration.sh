@@ -22,9 +22,9 @@ echo "$ADMIN_RESPONSE" | jq .
 ADMIN_ID=$(echo "$ADMIN_RESPONSE" | jq -r '.user.id // empty')
 ADMIN_PRIVATE_KEY=$(echo "$ADMIN_RESPONSE" | jq -r '.private_key // empty')
 
-if [ -z "$ADMIN_PRIVATE_KEY" ]; then
-    echo "❌ Erreur: Impossible de créer l'admin"
-    exit 1
+if [[ -z "$ADMIN_PRIVATE_KEY" ]]; then
+  echo "❌ Erreur: Impossible de créer l'admin"
+  exit 1
 fi
 
 # Sauvegarder la clé privée
@@ -41,9 +41,9 @@ LOGIN_RESPONSE=$(curl -s -X POST "$BASE_AUTH/login" \
 echo "$LOGIN_RESPONSE" | jq .
 TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.access_token // empty')
 
-if [ -z "$TOKEN" ]; then
-    echo "❌ Erreur: Impossible de se connecter"
-    exit 1
+if [[ -z "$TOKEN" ]]; then
+  echo "❌ Erreur: Impossible de se connecter"
+  exit 1
 fi
 
 echo "✅ Token obtenu"
@@ -65,9 +65,9 @@ UPLOAD_RESPONSE=$(curl -s -X POST "$BASE_VIDEO/upload" \
 echo "$UPLOAD_RESPONSE" | jq .
 VIDEO_ID=$(echo "$UPLOAD_RESPONSE" | jq -r '.video_id // empty')
 
-if [ -z "$VIDEO_ID" ]; then
-    echo "❌ Erreur: Impossible d'uploader la vidéo"
-    exit 1
+if [[ -z "$VIDEO_ID" ]]; then
+  echo "❌ Erreur: Impossible d'uploader la vidéo"
+  exit 1
 fi
 
 echo "✅ Vidéo uploadée: $VIDEO_ID"
@@ -112,10 +112,10 @@ curl -s -X GET "$BASE_VIDEO/$VIDEO_ID/download" \
   -H "Authorization: Bearer $TOKEN" \
   -o /tmp/downloaded_video.mp4
 
-if [ -f /tmp/downloaded_video.mp4 ]; then
-    echo "✅ Vidéo téléchargée: /tmp/downloaded_video.mp4"
+if [[ -f /tmp/downloaded_video.mp4 ]]; then
+  echo "✅ Vidéo téléchargée: /tmp/downloaded_video.mp4"
 else
-    echo "❌ Erreur lors du téléchargement"
+  echo "❌ Erreur lors du téléchargement"
 fi
 echo ""
 
