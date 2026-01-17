@@ -8,7 +8,7 @@ echo "=========================================================="
 echo ""
 
 # Vérifier si .env existe déjà
-if [ -f .env ]; then
+if [[ -f .env ]]; then
     echo "⚠️  Le fichier .env existe déjà."
     read -p "Voulez-vous le remplacer ? (y/N): " -n 1 -r
     echo
@@ -22,12 +22,17 @@ fi
 
 # Fonction pour générer un mot de passe aléatoire
 generate_password() {
+    # Génère une chaîne aléatoire, supprime les caractères non désirés
+    # et tronque à 32 caractères. On retourne explicitement 0 pour
+    # indiquer le succès de la fonction.
     openssl rand -base64 32 | tr -d "=+/" | cut -c1-32
+    return 0
 }
 
 # Fonction pour générer un secret JWT (plus long)
 generate_jwt_secret() {
     openssl rand -base64 64 | tr -d "=+/\n" | cut -c1-64
+        return 0
 }
 
 echo "🔑 Génération des secrets aléatoires..."

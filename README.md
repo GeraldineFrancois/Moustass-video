@@ -20,14 +20,14 @@
 
 **Moustass Video** est un microservice production-ready qui gère:
 
-✅ **Upload sécurisé** de vidéos (.mp4, .ts)  
-✅ **Gestion complète** via API REST (8+ endpoints)  
-✅ **Interface web** interactive pour upload/download  
-✅ **Chiffrement** RSA-3072 + métadonnées  
-✅ **Expiration automatique** après 60 jours  
-✅ **Architecture modulaire** avec 4 composants  
-✅ **Sécurité** (anti-traversal, anti-XSS)  
-✅ **Performance** avec async/await et MySQL  
+✅ **Upload sécurisé** de vidéos (.mp4, .ts)
+✅ **Gestion complète** via API REST (8+ endpoints)
+✅ **Interface web** interactive pour upload/download
+✅ **Chiffrement** RSA-3072 + métadonnées
+✅ **Expiration automatique** après 60 jours
+✅ **Architecture modulaire** avec 4 composants
+✅ **Sécurité** (anti-traversal, anti-XSS)
+✅ **Performance** avec async/await et MySQL
 
 ### Structure du projet
 
@@ -433,10 +433,10 @@ ls -ld uploads/
 
 ## 📝 Licence & Auteur
 
-**Projet**: Moustass Video Microservice  
-**Version**: 1.0.0  
-**Status**: ✅ Production-Ready  
-**Support**: Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)  
+**Projet**: Moustass Video Microservice
+**Version**: 1.0.0
+**Status**: ✅ Production-Ready
+**Support**: Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)
 
 ---
 
@@ -450,9 +450,9 @@ ls -ld uploads/
 
 ---
 
-**Questions?** Lire les docs ou vérifier les fichiers respectifs.  
-**Prêt à déployer?** Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)  
-**Besoin de détails?** Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)  
+**Questions?** Lire les docs ou vérifier les fichiers respectifs.
+**Prêt à déployer?** Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+**Besoin de détails?** Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)
 
 🎉 **Merci d'utiliser Moustass Video!**
 python main_upload.py
@@ -765,6 +765,6 @@ Projet Moustass - 2026
 
 ---
 
-**Status**: ✅ Prêt pour développement et test  
-**Version**: 1.0.0  
+**Status**: ✅ Prêt pour développement et test
+**Version**: 1.0.0
 **Maintenability**: A+

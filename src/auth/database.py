@@ -1,77 +1,79 @@
+"""Database connection helper for the Auth microservice.
+
+This module constructs a SQLAlchemy engine configured for MySQL and exposes a
+`SessionLocal` factory plus `init_db` / `get_db` helpers used by FastAPI.
+
+The connection logic includes a retry loop with exponential backoff so the
+service can wait for the MySQL container when started by Docker Compose.
+"""
+
+from typing import Generator
 import os
+import sys
+import time
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from .models import Base
-import time
-import sys
 
-# Configuration MySQL pour le service d'authentification
-# Utilise des variables d'environnement avec défauts adaptés à docker-compose
+from .models import Base
+
+# Environment-driven configuration (sane Docker Compose defaults)
 DB_HOST = os.getenv("AUTH_DB_HOST", "mysql")
 DB_USER = os.getenv("AUTH_DB_USER", "auth_user")
 DB_PASSWORD = os.getenv("AUTH_DB_PASSWORD", "auth_password")
 DB_PORT = os.getenv("AUTH_DB_PORT", "3306")
 DB_NAME = os.getenv("AUTH_DB_NAME", "auth_db")
 
-# Construction de l'URL de connexion MySQL
+# Build a SQLAlchemy connection URL for PyMySQL driver
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# If running tests, use an in-memory SQLite database to avoid network calls
-if os.getenv("TESTING") == "1":
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    # Create a sessionmaker bound to the in-memory engine
-    SessionLocal = sessionmaker(
-        bind=engine,
-        autoflush=False,
-        autocommit=False
-    )
-    print("⚠️ TESTING mode enabled: using in-memory SQLite database")
-else:
-    # Retry logic for database connection
-    max_retries = 10
+
+def _create_engine_with_retry(url: str, max_retries: int = 10):
+    """Create a SQLAlchemy engine and retry until MySQL accepts connections.
+
+    This helper wraps engine creation and executes a trivial `SELECT 1` to
+    ensure the server is reachable. It exits the process on failure after
+    `max_retries` attempts to avoid running the service in a broken state.
+    """
     retry_count = 0
     engine = None
-
     while retry_count < max_retries:
         try:
             engine = create_engine(
-                DATABASE_URL,
-                pool_pre_ping=True,      # Vérifie la connexion avant utilisation
-                echo=False,              # Pas de logs SQL
-                pool_recycle=3600,       # Recycle les connexions après 1h
-                connect_args={"connect_timeout": 10}
+                url,
+                pool_pre_ping=True,
+                echo=False,
+                pool_recycle=3600,
+                connect_args={"connect_timeout": 10},
             )
-            # Test connection
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
             print(f"✅ Successfully connected to MySQL at {DB_HOST}:{DB_PORT}")
-            break
-        except Exception as e:
+            return engine
+        except Exception as exc:
             retry_count += 1
             if retry_count >= max_retries:
                 print(f"❌ Failed to connect to MySQL after {max_retries} attempts")
-                print(f"Error: {str(e)}")
+                print(f"Error: {str(exc)}")
                 sys.exit(1)
-            
-            wait_time = min(2 ** retry_count, 30)  # Exponential backoff, max 30s
+            wait_time = min(2 ** retry_count, 30)
             print(f"⏳ MySQL not ready. Attempt {retry_count}/{max_retries}. Retrying in {wait_time}s...")
             time.sleep(wait_time)
 
-    # Session maker pour les dépendances FastAPI
-    SessionLocal = sessionmaker(
-        bind=engine,
-        autoflush=False,
-        autocommit=False
-    )
+
+engine = _create_engine_with_retry(DATABASE_URL)
+
+# Provide a Session factory used by FastAPI dependencies
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
-def init_db():
-    """Crée toutes les tables si elles n'existent pas."""
+def init_db() -> None:
+    """Create DB tables defined in SQLAlchemy models if they are missing."""
     Base.metadata.create_all(bind=engine)
 
 
-def get_db():
-    """Dépendance FastAPI pour obtenir une session DB."""
+def get_db() -> Generator:
+    """FastAPI dependency that yields a DB session and closes it after use."""
     db = SessionLocal()
     try:
         yield db

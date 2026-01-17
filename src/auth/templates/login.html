@@ -68,6 +68,22 @@
       </div>
     </div>
     <script>
+      // Utility: safe JSON parse without throwing
+      function safeJsonParse(txt){
+        try{
+          return JSON.parse(txt);
+        }catch(err){
+          console.warn('safeJsonParse: invalid JSON', err);
+          return null;
+        }
+      }
+
+      // Helper: read response as text and attempt to parse JSON safely
+      async function parseJsonResponse(res){
+        const txt = await res.text();
+        const json = safeJsonParse(txt);
+        return { ok: res.ok, json: json, text: txt };
+      }
       function showSignup(role){
         document.getElementById('signup').style.display='block';
         document.getElementById('role').value = role;
@@ -112,6 +128,8 @@
             }
           });
         }
+
+
         if(f){
           f.addEventListener('submit', async (e)=>{
             e.preventDefault();
@@ -131,48 +149,29 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
               });
-              // read body once as text, then try parse JSON
-              const txt = await res.text();
-              let json = null;
-              try{
-                json = JSON.parse(txt);
-              }catch(error_){
-                // Non-JSON response from server
-                console.error('JSON parse error:', error_);
-                if(!res.ok){
-                  showResponse('Erreur serveur', txt);
-                  console.error('Server error response (non-JSON):', txt);
-                  return;
-                }
-                showResponse('Réponse inattendue', txt);
-                return;
-              }
-              if(!res.ok){
-                const msg = json.detail || json.message || JSON.stringify(json);
+              const { ok, json, text } = await parseJsonResponse(res);
+              if(!ok){
+                // prefer server-provided messages when available
+                const msg = json?.detail || json?.message || text || 'Erreur serveur';
                 showResponse('Erreur', msg);
                 return;
               }
-              const pk = json.private_key || json.privateKey || '';
-              const token = json.access_token || '';
+              const pk = json?.private_key || json?.privateKey || '';
+              const token = json?.access_token || '';
               if(pk){
-                // show both private and public keys when available
-                const pub = (json.user && json.user.public_key) ? json.user.public_key : '';
-                // stocker le token si présent
-                if(token){
-                  localStorage.setItem('access_token', token);
-                }
+                const pub = json?.user?.public_key || '';
+                if(token) localStorage.setItem('access_token', token);
                 showResponseKeys(pk, pub, token);
-              } else {
-                // Afficher token seul s'il est présent
-                if(token){
-                  localStorage.setItem('access_token', token);
-                  const box = document.getElementById('responseBox');
-                  document.getElementById('tokenText').value = token;
-                  box.style.display = 'block';
-                } else {
-                  showResponse('Succès', JSON.stringify(json));
-                }
+                return;
               }
+              if(token){
+                localStorage.setItem('access_token', token);
+                const box = document.getElementById('responseBox');
+                document.getElementById('tokenText').value = token;
+                box.style.display = 'block';
+                return;
+              }
+              showResponse('Succès', JSON.stringify(json));
             }catch(error_){
               console.error('Network error:', error_);
               showResponse('Erreur réseau', String(error_));

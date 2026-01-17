@@ -43,9 +43,8 @@ test_*.py
 *_test.py
 
 # Base de données
+# MySQL data volume is tracked separately; keep the volume out of images.
 *.db
-*.sqlite
-*.sqlite3
 *.mysql
 mysql-data/
 

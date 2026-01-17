@@ -19,7 +19,7 @@ FLUSH PRIVILEGES;
 CREATE TABLE IF NOT EXISTS videos (
     id VARCHAR(36) PRIMARY KEY COMMENT 'UUID unique',
     user_id INT NOT NULL COMMENT 'ID utilisateur propriétaire',
-    sender_id VARCHAR(36) NOT NULL COMMENT 'ID de l\'expéditeur',
+    sender_id VARCHAR(36) NOT NULL COMMENT 'ID de l''expéditeur',
     receiver_id VARCHAR(36) NOT NULL COMMENT 'ID du destinataire',
     storage_path VARCHAR(255) NOT NULL COMMENT 'Chemin de stockage du fichier',
     encrypted_key LONGTEXT NOT NULL COMMENT 'Clé AES chiffrée en RSA-3072',
@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS videos (
     signature LONGTEXT NULL COMMENT 'Signature RSA du hash du fichier',
     is_signed BOOLEAN DEFAULT FALSE COMMENT 'Indique si la vidéo est signée (immuable)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Date de création',
-    expires_at TIMESTAMP NULL COMMENT 'Date d\'expiration (60 jours)',
-    
+    expires_at TIMESTAMP NULL COMMENT 'Date d''expiration (60 jours)',
+
     -- Indexes pour les recherches
     INDEX idx_user (user_id),
     INDEX idx_sender (sender_id),
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS videos (
 
 -- Vue pour les vidéos non expirées
 CREATE OR REPLACE VIEW active_videos AS
-SELECT * FROM videos 
+SELECT * FROM videos
 WHERE expires_at IS NULL OR expires_at > NOW()
 ORDER BY created_at DESC;
 
@@ -52,10 +52,10 @@ DELIMITER $$
 
 CREATE PROCEDURE IF NOT EXISTS cleanup_expired_videos()
 BEGIN
-    UPDATE videos 
-    SET status = 'EXPIRED' 
-    WHERE expires_at IS NOT NULL 
-    AND expires_at <= NOW() 
+    UPDATE videos
+    SET status = 'EXPIRED'
+    WHERE expires_at IS NOT NULL
+    AND expires_at <= NOW()
     AND status != 'EXPIRED';
 END$$
 
