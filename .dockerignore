@@ -1,0 +1,57 @@
+# Fichiers sensibles
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.pub
+id_rsa*
+ssh_config
+
+# Historique et caches
+.git
+.gitignore
+.github
+.gitlab-ci.yml
+.travis.yml
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.cache
+__pycache__
+.pytest_cache
+*.pyc
+*.pyo
+*.egg-info
+.venv
+venv/
+env/
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Documentation et tests
+README.md
+CHANGELOG.md
+*.md
+docs/
+tests/
+test_*.py
+*_test.py
+
+# Base de données
+# MySQL data volume is tracked separately; keep the volume out of images.
+*.db
+*.mysql
+mysql-data/
+
+# Uploads (peuvent contenir des données sensibles)
+uploads/
+tmp/
+
+# Fichiers de config locaux
+sonar-project.properties
+.sonarqube/

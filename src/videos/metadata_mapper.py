@@ -29,6 +29,7 @@ class MetadataMapper:
         receiver_id: str,
         storage_path: str,
         encrypted_key: str,
+        iv: str,
         amount: float,
         expiration_days: int = 60
     ) -> Video:
@@ -41,6 +42,7 @@ class MetadataMapper:
             receiver_id: ID du destinataire
             storage_path: Chemin de stockage du fichier
             encrypted_key: Clé AES chiffrée (RSA-3072)
+            iv: Vecteur d'initialisation AES-GCM en base64
             amount: Montant en EUR
             expiration_days: Nombre de jours avant expiration (défaut: 60)
             
@@ -58,6 +60,7 @@ class MetadataMapper:
             receiver_id=receiver_id,
             storage_path=storage_path,
             encrypted_key=encrypted_key,
+            iv=iv,
             amount=amount,
             status=VideoStatus.UPLOADED,
             created_at=now,
@@ -223,6 +226,8 @@ class MetadataMapper:
             "storage_path": video.storage_path,
             "status": video.status.value,
             "is_signed": video.is_signed,
+            "encrypted_key": video.encrypted_key,
+            "iv": video.iv,
             "amount": float(video.amount),
             "created_at": video.created_at.isoformat() if video.created_at else None,
             "expires_at": video.expires_at.isoformat() if video.expires_at else None,

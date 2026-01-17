@@ -41,24 +41,65 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="mb-3"><i class="fa-solid fa-key me-2"></i>Authentification</h5>
-            <div class="mb-2">
-              <label class="form-label">Token JWT (Bearer)</label>
-              <textarea id="tokenInput" class="form-control" rows="2" placeholder="Collez ici le token obtenu après login"></textarea>
-              <div class="form-text">Stocké en local et utilisé pour les requêtes protégées.</div>
+
+            <!-- Token JWT -->
+            <div class="mb-4 p-3 bg-info bg-opacity-10 rounded">
+              <label class="form-label"><strong>🔐 Token JWT (Bearer) - SECTION BLEUE</strong></label>
+              <small class="text-muted d-block mb-2">
+                ✓ Copier APRÈS signup/login (commence par "ey")<br/>
+                ✗ Pas la clé privée! La clé privée va dans la section ROUGE ci-dessous
+              </small>
+              <textarea id="tokenInput" class="form-control" rows="2" placeholder="eyJhbGciOiJIUzI1NiIs..."></textarea>
+              <div class="d-flex gap-2 mt-2">
+                <button id="saveTokenBtn" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i>Enregistrer Token</button>
+                <button id="importTokenBtn" class="btn btn-outline-info btn-sm"><i class="fa-solid fa-download me-1"></i>Importer depuis Auth</button>
+                <button id="clearTokenBtn" class="btn btn-outline-secondary btn-sm">Effacer</button>
+              </div>
             </div>
-            <div class="d-flex gap-2 mb-3">
-              <button id="saveTokenBtn" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i>Enregistrer</button>
-              <button id="clearTokenBtn" class="btn btn-outline-secondary btn-sm">Effacer</button>
+
+            <!-- Identité Utilisateur -->
+            <div class="mb-4 p-3 bg-success bg-opacity-10 rounded">
+              <label class="form-label"><strong>👤 ID Utilisateur</strong></label>
+              <small class="text-muted d-block mb-2">Extrait du token ou saisi manuellement</small>
+              <input id="userId" class="form-control" placeholder="Votre ID utilisateur" />
             </div>
-            <div class="mb-2">
-              <label class="form-label">ID Utilisateur</label>
-              <input id="userId" class="form-control" readonly />
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Destinataire</label>
+
+            <!-- Destinataire (toujours Admin) -->
+            <div class="mb-4 p-3 bg-warning bg-opacity-10 rounded">
+              <label class="form-label"><strong>📬 Destinataire</strong></label>
+              <small class="text-muted d-block mb-2">Fixé à ADMIN (non modifiable)</small>
               <input id="receiverId" class="form-control" value="ADMIN" readonly />
             </div>
-            <div class="small-muted">Le `user_id` est extrait du token pour remplir les champs et accompagner vos opérations.</div>
+
+            <hr />
+
+            <!-- Clés RSA -->
+            <div class="mb-3">
+              <h6 class="mb-3"><i class="fa-solid fa-lock me-2"></i>Vos Clés RSA</h6>
+
+              <!-- Clé Privée -->
+              <div class="mb-3 p-2 border-start border-danger border-4">
+                <label class="form-label text-danger"><strong>🔑 Clé PRIVÉE - SECTION ROUGE - UTILISÉE POUR SIGNER</strong></label>
+                <small class="text-muted d-block mb-2">
+                  Format : <code>-----BEGIN PRIVATE KEY-----</code><br/>
+                  <strong style="color: darkred;">⚠️ NE JAMAIS copier dans le champ Token JWT ci-dessus!</strong><br/>
+                  Utilisée UNIQUEMENT : Quand vous cliquez "Signer" (pas pour l'upload)<br/>
+                  Reste 100% côté client (jamais envoyée au serveur)
+                </small>
+                <textarea id="privateKeyForStorage" class="form-control form-control-sm" rows="3" placeholder="-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----"></textarea>
+              </div>
+
+              <!-- Clé Publique -->
+              <div class="p-2 border-start border-success border-4">
+                <label class="form-label text-success"><strong>🔓 Clé PUBLIQUE</strong></label>
+                <small class="text-muted d-block mb-2">Format : <code>-----BEGIN PUBLIC KEY-----</code><br/>Utilisée pour : VÉRIFIER les signatures</small>
+                <textarea id="publicKeyForStorage" class="form-control form-control-sm" rows="3" placeholder="-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----"></textarea>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -68,31 +109,57 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="mb-3"><i class="fa-solid fa-upload me-2"></i>Uploader une Vidéo</h5>
+
+            <!-- Guide d'utilisation -->
+            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+              <strong>📖 Guide rapide :</strong><br/>
+              <small>
+                1️⃣ Collez le <strong>Token JWT</strong> (bleu, section à gauche) → user_id auto-rempli<br/>
+                2️⃣ Sélectionnez une vidéo, montant, clé chiffrée<br/>
+                3️⃣ Cliquez "Uploader" (envoie token + fichier)<br/>
+                4️⃣ Une fois uploadée, cliquez "Signer" dans la liste<br/>
+                5️⃣ Dans le modal, collez votre <strong>Clé PRIVÉE</strong> (rouge, section à gauche)<br/>
+                <strong style="color: red;">⚠️ IMPORTANT : Clé privée ≠ Token JWT! Voir les couleurs.</strong>
+              </small>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
             <form id="uploadForm">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label for="videoFile" class="form-label">Vidéo (.mp4 / .ts)</label>
-                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.ts" required />
-                  <div class="form-text">Formats autorisés uniquement.</div>
+                  <label for="videoFile" class="form-label"><strong>Vidéo (.mp4 / .ts)</strong></label>
+                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.webm,.ts,video/mp4,video/webm,video/*" capture="user" required />
+                  <div class="form-text">Formats autorisés: .mp4, .webm, .ts (webcam: video/webm / video/*)</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Montant (RS)</label>
+                  <label class="form-label"><strong>Montant (RS)</strong></label>
                   <div class="input-group">
                     <span class="input-group-text">RS</span>
                     <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0" placeholder="0.00" required />
                   </div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">ID Expéditeur (readonly)</label>
-                  <input type="text" id="senderId" name="sender_id" class="form-control" readonly required />
+                  <label class="form-label"><strong>ID Expéditeur (vous)</strong></label>
+                  <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="Votre ID utilisateur" required />
+                  <div class="form-text">Éditable. Rempli auto depuis le token JWT.</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Destinataire (readonly)</label>
+                  <label class="form-label"><strong>Destinataire</strong></label>
                   <input type="text" id="receiverIdForm" name="receiver_id" class="form-control" value="ADMIN" readonly required />
+                  <div class="form-text">Toujours ADMIN (non modifiable).</div>
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Clé AES chiffrée (Base64)</label>
+                  <label class="form-label"><strong>Clé AES chiffrée (Base64)</strong></label>
                   <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="2" placeholder="Collez la clé déjà chiffrée avec RSA-3072" required></textarea>
+                  <div class="form-text">Clé de chiffrement AES, elle-même chiffrée avec RSA-3072.</div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label"><strong>IV AES-GCM (Base64)</strong></label>
+                  <div class="input-group">
+                    <textarea id="ivAES" name="iv" class="form-control" rows="1" placeholder="IV généré automatiquement..." readonly required></textarea>
+                    <button class="btn btn-outline-secondary" type="button" onclick="generateIV()"><i class="fa-solid fa-dice me-1"></i>Générer IV</button>
+                    <button class="btn btn-outline-info" type="button" onclick="copyIV()"><i class="fa-solid fa-copy me-1"></i>Copier</button>
+                  </div>
+                  <div class="form-text">Vecteur d'initialisation AES-GCM (12 octets). Cliquez "Générer IV" pour créer automatiquement.</div>
                 </div>
               </div>
               <div class="mt-3 d-flex align-items-center gap-3">
@@ -125,13 +192,14 @@
                     <th>Statut</th>
                     <th>Montant</th>
                     <th>Signé</th>
+                    <th>IV</th>
                     <th>Expire</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="videosList">
                   <tr id="emptyState">
-                    <td colspan="6" class="text-center text-muted py-4"><i class="fa-solid fa-inbox me-2"></i>Aucune vidéo</td>
+                    <td colspan="7" class="text-center text-muted py-4"><i class="fa-solid fa-inbox me-2"></i>Aucune vidéo</td>
                   </tr>
                 </tbody>
               </table>
@@ -146,15 +214,29 @@
   <div class="modal fade" id="signModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-warning bg-opacity-10">
           <h5 class="modal-title"><i class="fa-solid fa-pen-nib me-2"></i>Signer la Vidéo</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-2"><strong>Video ID:</strong> <span id="signVideoId" class="token-chip"></span></div>
-          <label class="form-label">Clé privée RSA (PEM)</label>
-          <textarea id="privateKeyPem" class="form-control" rows="6" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----" required></textarea>
-          <div class="form-text">La clé n'est jamais stockée côté serveur; elle sert juste à signer le hash du fichier.</div>
+          <div class="alert alert-info" role="alert">
+            <strong>⚠️ Important :</strong> Utilisez votre clé <strong>PRIVÉE</strong> RSA (celle-ci commence par <code>-----BEGIN PRIVATE KEY-----</code>),
+            PAS la clé publique (qui commence par <code>-----BEGIN PUBLIC KEY-----</code>).
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><strong>Video ID :</strong></label>
+            <code id="signVideoId" style="font-size: 12px; color: #d1d5db; word-break: break-all;"></code>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="privateKeyPem"><strong>Clé Privée RSA (PEM)</strong></label>
+            <textarea id="privateKeyPem" class="form-control" rows="8" placeholder="-----BEGIN PRIVATE KEY-----
+...votre clé privée...
+-----END PRIVATE KEY-----" required></textarea>
+            <div class="form-text mt-2">
+              ✓ Format correct : commence par <code>-----BEGIN PRIVATE KEY-----</code><br>
+              ✗ Format incorrect : <code>-----BEGIN PUBLIC KEY-----</code> (c'est la clé publique, pas la privée)
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -172,7 +254,8 @@
     const escapeHTML = (v) => (v == null ? '' : String(v).replace(/[&<>'"`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c])));
     const formatDate = (s) => (!s ? 'N/A' : new Date(s).toLocaleString('fr-FR', { year:'numeric', month:'short', day:'numeric' }));
     const truncateId = (id) => (id ? id.substring(0, 8) + '...' + id.substring(id.length - 4) : '');
-    const getToken = () => localStorage.getItem('authToken') || '';
+    // Cherche d'abord le token local à l'UI (authToken), sinon celui stocké par l'écran de login Auth (access_token)
+    const getToken = () => localStorage.getItem('authToken') || localStorage.getItem('access_token') || '';
     const setToken = (t) => localStorage.setItem('authToken', t || '');
 
     function decodeJWT(token) {
@@ -188,23 +271,70 @@
       const token = getToken();
       document.getElementById('tokenInput').value = token;
       const payload = decodeJWT(token);
+      if (!payload) {
+        console.warn('Token invalide ou absent - les champs user_id restent vides.');
+        console.log('Assurez-vous de vous être connecté via /login (pas /signup).');
+        return;
+      }
       const userId = payload?.user_id || '';
+      if (!userId) {
+        console.warn('user_id manquant dans le token. Avez-vous utilisé /login ?');
+      }
       document.getElementById('userId').value = userId;
-      document.getElementById('senderId').value = userId;
+      document.getElementById('senderId').value = userId;  // Editable now, but pre-filled
       document.getElementById('receiverId').value = 'ADMIN';
       document.getElementById('receiverIdForm').value = 'ADMIN';
+    }
+
+    // Stockage des clés RSA (localStorage)
+    function storeRSAKeys(privateKey, publicKey) {
+      localStorage.setItem('privateKey', privateKey || '');
+      localStorage.setItem('publicKey', publicKey || '');
+      document.getElementById('privateKeyForStorage').value = privateKey || '';
+      document.getElementById('publicKeyForStorage').value = publicKey || '';
+      alert('✅ Clés RSA stockées localement.\n\n⚠️ IMPORTANT: Conservez une copie de sécurité de votre clé PRIVÉE!');
+    }
+
+    function getStoredPrivateKey() {
+      return localStorage.getItem('privateKey') || '';
+    }
+
+    function getStoredPublicKey() {
+      return localStorage.getItem('publicKey') || '';
     }
 
     // Token actions
     document.getElementById('saveTokenBtn').addEventListener('click', () => {
       const t = document.getElementById('tokenInput').value.trim();
+
+      // Validation : un JWT commence toujours par "ey"
+      if (t && !t.startsWith('ey')) {
+        alert('❌ ERREUR : Vous avez probablement collé une clé RSA au lieu d\'un token JWT.\n\nUn token JWT commence par "ey".\n\nVotre token JWT se trouve dans la réponse de login/signup, pas dans les fichiers des clés RSA.');
+        return;
+      }
+
       setToken(t);
       applyAuthContext();
+      if (t) alert('✅ Token enregistré avec succès!');
     });
+
     document.getElementById('clearTokenBtn').addEventListener('click', () => {
       setToken('');
       applyAuthContext();
     });
+
+    // Importer le token sauvegardé par l'écran de login Auth (clé access_token)
+    const importBtn = document.getElementById('importTokenBtn');
+    if (importBtn) {
+      importBtn.addEventListener('click', () => {
+        const t = localStorage.getItem('access_token') || '';
+        if (!t) { alert('Aucun token trouvé depuis Auth. Connectez-vous via http://localhost:8001/'); return; }
+        document.getElementById('tokenInput').value = t;
+        setToken(t);
+        applyAuthContext();
+        alert('Token importé depuis Auth');
+      });
+    }
 
     // Upload
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
@@ -256,13 +386,23 @@
           const stCell = document.createElement('td'); const b = document.createElement('span'); b.className='badge bg-secondary badge-status'; b.textContent = v.status; stCell.appendChild(b);
           const amtCell = document.createElement('td'); amtCell.textContent = `RS ${Number.parseFloat(v.amount ?? 0).toFixed(2)}`;
           const signedCell = document.createElement('td'); signedCell.textContent = v.is_signed ? 'Oui' : 'Non';
+          const ivCell = document.createElement('td');
+          if (v.iv) {
+            const ivCode = document.createElement('code');
+            ivCode.className = 'small text-muted';
+            ivCode.textContent = v.iv.substring(0, 12) + '...';
+            ivCode.title = v.iv;  // Afficher l'IV complet au survol
+            ivCell.appendChild(ivCode);
+          } else {
+            ivCell.innerHTML = '<em class="text-muted">N/A</em>';
+          }
           const expCell = document.createElement('td'); expCell.textContent = formatDate(v.expires_at);
           const actCell = document.createElement('td');
           const viewBtn = document.createElement('a'); viewBtn.className='btn btn-sm btn-outline-primary me-1'; viewBtn.textContent='Voir'; viewBtn.href=`${API_BASE}/${v.id}`; viewBtn.target='_blank';
           const dlBtn = document.createElement('a'); dlBtn.className='btn btn-sm btn-primary me-1'; dlBtn.textContent='Télécharger'; dlBtn.href=`${API_BASE}/${v.id}/download`;
           const signBtn = document.createElement('button'); signBtn.className='btn btn-sm btn-success'; signBtn.textContent='Signer'; signBtn.disabled = !!v.is_signed; signBtn.addEventListener('click', () => openSignModal(v.id));
           actCell.appendChild(viewBtn); actCell.appendChild(dlBtn); actCell.appendChild(signBtn);
-          tr.appendChild(idCell); tr.appendChild(stCell); tr.appendChild(amtCell); tr.appendChild(signedCell); tr.appendChild(expCell); tr.appendChild(actCell);
+          tr.appendChild(idCell); tr.appendChild(stCell); tr.appendChild(amtCell); tr.appendChild(signedCell); tr.appendChild(ivCell); tr.appendChild(expCell); tr.appendChild(actCell);
           tbody.appendChild(tr);
         });
       } catch(e) { alert('Erreur chargement liste'); }
@@ -283,16 +423,42 @@
       const videoId = document.getElementById('signVideoId').textContent;
       const privateKey = document.getElementById('privateKeyPem').value.trim();
       if (!privateKey) { alert('Veuillez coller votre clé privée PEM'); return; }
-      const form = new FormData(); form.append('private_key_pem', privateKey);
+
+      // Validation : vérifier que c'est bien une CLÉS PRIVÉE et pas une clé publique
+      if (!privateKey.includes('BEGIN PRIVATE KEY')) {
+        alert('❌ ERREUR : Vous avez collé une clé publique ou un format incorrect.\n\nAssurez-vous de coller une clé qui commence par :\n-----BEGIN PRIVATE KEY-----\n\net NON pas :\n-----BEGIN PUBLIC KEY-----');
+        return;
+      }
+
+      // Construire le FormData correctement
+      const form = new FormData();
+      form.append('private_key_pem', privateKey);
+
       try {
-        const resp = await fetch(`${API_BASE}/${videoId}/sign`, { method:'POST', headers:{ 'Authorization': `Bearer ${token}` }, body: form });
-        if (!resp.ok) throw new Error(await resp.text());
-        const data = await resp.json();
-        alert('Signature OK: ' + data.message);
+        console.log(`Signature: POST ${API_BASE}/${videoId}/sign`);
+        const resp = await fetch(`${API_BASE}/${videoId}/sign`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: form
+        });
+
+        const respText = await resp.text();
+        console.log(`Signature response status: ${resp.status}`);
+        console.log(`Signature response body: ${respText}`);
+
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}: ${respText}`);
+        }
+
+        const data = JSON.parse(respText);
+        alert('✅ Signature OK: ' + data.message);
         signModalInstance?.hide();
         document.getElementById('privateKeyPem').value = '';
         await loadVideos();
-      } catch(err) { alert('Erreur signature: ' + (err?.message || err)); }
+      } catch(err) {
+        console.error('Signature error:', err);
+        alert('❌ Erreur signature: ' + (err?.message || err));
+      }
     });
 
     // Suppression protégée (nécessite token)
@@ -308,8 +474,50 @@
       } catch(err) { alert('Erreur suppression: ' + (err?.message || err)); }
     }
 
+    // Génération de l'IV AES-GCM
+    function generateIV() {
+      try {
+        // Générer un IV aléatoire de 12 octets (recommandé pour AES-GCM)
+        const iv = new Uint8Array(12);
+        crypto.getRandomValues(iv);
+
+        // Convertir en Base64
+        const ivBase64 = btoa(String.fromCharCode(...iv));
+
+        // Afficher dans le champ
+        document.getElementById('ivAES').value = ivBase64;
+
+        console.log('✅ IV généré:', ivBase64);
+        console.log('   Longueur:', iv.length, 'octets');
+        console.log('   Base64 length:', ivBase64.length, 'caractères');
+      } catch (error) {
+        console.error('Erreur génération IV:', error);
+        alert('❌ Erreur lors de la génération de l\'IV: ' + error.message);
+      }
+    }
+
+    // Copier l'IV dans le presse-papier
+    function copyIV() {
+      const ivInput = document.getElementById('ivAES');
+      const ivValue = ivInput.value.trim();
+
+      if (!ivValue) {
+        alert('❌ Veuillez d\'abord générer un IV en cliquant sur "Générer IV"');
+        return;
+      }
+
+      ivInput.select();
+      document.execCommand('copy');
+      alert('✅ IV copié dans le presse-papier!\n\nIV: ' + ivValue);
+    }
+
     // Init
     applyAuthContext();
+    // Charger les clés stockées
+    const storedPrivate = getStoredPrivateKey();
+    const storedPublic = getStoredPublicKey();
+    if (storedPrivate) document.getElementById('privateKeyForStorage').value = storedPrivate;
+    if (storedPublic) document.getElementById('publicKeyForStorage').value = storedPublic;
     loadVideos();
   </script>
 </body>

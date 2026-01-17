@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload video</title>
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Moustass Video</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNavDropdown"
+          aria-controls="navbarNavDropdown"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="../index-user.html"
+                >Accueil</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" aria-current="page" href="#">Historique</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Video
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="./pages/upload-video-user.html"
+                    >Uploader</a
+                  >
+                </li>
+                <li><a class="dropdown-item" href="#">Liste</a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#"
+                >Deconnecter</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <h1>Uploader une Vidéo</h1>
+
+      <!-- Alerte importante -->
+      <div class="alert alert-warning">
+        <strong>⚠️ Sécurité :</strong> La clé AES et l'IV sont générés automatiquement.
+        Ne modifiez PAS ces valeurs manuellement !
+      </div>
+
+      <form id="uploadForm">
+        <!-- Vidéo -->
+        <div class="mb-3">
+          <label for="videoFile" class="form-label">Sélectionnez une vidéo :</label>
+          <input class="form-control" type="file" id="videoFile" accept="video/*" required />
+        </div>
+
+        <!-- Destinataire -->
+        <div class="mb-3">
+          <label for="recipientEmail" class="form-label">Destinataire :</label>
+          <input class="form-control" type="text" id="recipientEmail" value="Admin" readonly />
+        </div>
+
+        <!-- Montant -->
+        <div class="mb-3">
+          <label for="amount" class="form-label">Montant (RS) :</label>
+          <input class="form-control" type="number" id="amount" value="850" required />
+        </div>
+
+        <!-- Clé AES (générée automatiquement) -->
+        <div class="mb-3">
+          <label class="form-label">🔑 Clé AES chiffrée (générée automatiquement)</label>
+          <textarea
+            id="encryptedKey"
+            class="form-control"
+            rows="3"
+            readonly
+            placeholder="Cliquez sur 'Générer Clés' pour créer"
+          ></textarea>
+          <small class="text-muted">Cette clé est générée aléatoirement et chiffrée avec RSA</small>
+        </div>
+
+        <!-- IV (généré automatiquement) -->
+        <div class="mb-3">
+          <label class="form-label">📍 IV AES-GCM (généré automatiquement)</label>
+          <input
+            type="text"
+            id="ivAES"
+            class="form-control"
+            readonly
+            placeholder="Cliquez sur 'Générer Clés' pour créer"
+          />
+          <small class="text-muted">Vecteur d'initialisation (12 bytes aléatoires)</small>
+        </div>
+
+        <!-- Boutons -->
+        <button type="button" class="btn btn-primary" onclick="generateEncryptionKeys()">
+          🔑 Générer Clés de Chiffrement
+        </button>
+        <button type="submit" class="btn btn-success" id="uploadBtn" disabled>
+          📤 Uploader la Vidéo
+        </button>
+      </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const VIDEO_API = 'http://localhost:8002/api/videos';
+      const SECURITY_API = 'http://localhost:8003/api/security';
+
+      let generatedAESKey = null;
+      let generatedIV = null;
+
+      // Fonction pour convertir PEM en ArrayBuffer
+      function pemToArrayBuffer(pem) {
+        const b64 = pem
+          .replace(/-----BEGIN PUBLIC KEY-----/, '')
+          .replace(/-----END PUBLIC KEY-----/, '')
+          .replace(/\s/g, '');
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+      }
+
+      // Générer les clés de chiffrement
+      async function generateEncryptionKeys() {
+        try {
+          // 1. Générer IV aléatoire (12 bytes)
+          generatedIV = crypto.getRandomValues(new Uint8Array(12));
+          const ivBase64 = btoa(String.fromCharCode(...generatedIV));
+          document.getElementById('ivAES').value = ivBase64;
+
+          // 2. Générer clé AES-256 aléatoire
+          const aesKey = await crypto.subtle.generateKey(
+            { name: 'AES-GCM', length: 256 },
+            true,
+            ['encrypt', 'decrypt']
+          );
+
+          // 3. Exporter la clé AES
+          const aesKeyRaw = await crypto.subtle.exportKey('raw', aesKey);
+          generatedAESKey = new Uint8Array(aesKeyRaw);
+
+          // 4. Récupérer la clé publique RSA de l'admin
+          console.log('Fetching admin public key from:', `${SECURITY_API}/keys/admin-public`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+          
+          const response = await fetch(`${SECURITY_API}/keys/admin-public`, {
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          
+          if (!data.public_key_pem) {
+            throw new Error('Clé publique manquante dans la réponse');
+          }
+          
+          const public_key_pem = data.public_key_pem;
+
+          // 5. Importer la clé publique RSA
+          const publicKey = await crypto.subtle.importKey(
+            'spki',
+            pemToArrayBuffer(public_key_pem),
+            { name: 'RSA-OAEP', hash: 'SHA-256' },
+            false,
+            ['encrypt']
+          );
+
+          // 6. Chiffrer la clé AES avec RSA
+          const encryptedKeyBuffer = await crypto.subtle.encrypt(
+            { name: 'RSA-OAEP' },
+            publicKey,
+            generatedAESKey
+          );
+
+          // 7. Encoder en Base64
+          const encryptedKeyBase64 = btoa(
+            String.fromCharCode(...new Uint8Array(encryptedKeyBuffer))
+          );
+          document.getElementById('encryptedKey').value = encryptedKeyBase64;
+
+          // 8. Activer le bouton upload
+          document.getElementById('uploadBtn').disabled = false;
+
+          alert('✅ Clés générées avec succès !');
+        } catch (error) {
+          console.error('Erreur génération clés:', error);
+          
+          let errorMessage = 'Erreur lors de la génération des clés';
+          
+          if (error.name === 'AbortError') {
+            errorMessage = 'Timeout: Le service de sécurité ne répond pas. Vérifiez que http://localhost:8003 est accessible.';
+          } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Impossible de contacter le service de sécurité. Vérifiez que:\n' +
+                          '1. Le service security tourne (docker-compose ps)\n' +
+                          '2. Le port 8003 est accessible\n' +
+                          '3. CORS est configuré correctement';
+          } else {
+            errorMessage += ': ' + error.message;
+          }
+          
+          alert('❌ ' + errorMessage);
+        }
+      }
+
+      // Upload de la vidéo
+      document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          alert('❌ Veuillez vous connecter d\'abord');
+          window.location.href = '/';
+          return;
+        }
+
+        const videoFile = document.getElementById('videoFile').files[0];
+        const encryptedKey = document.getElementById('encryptedKey').value;
+        const iv = document.getElementById('ivAES').value;
+        const amount = document.getElementById('amount').value;
+
+        if (!videoFile || !encryptedKey || !iv) {
+          alert('❌ Veuillez générer les clés de chiffrement avant d\'uploader');
+          return;
+        }
+
+        // Déchiffrer le JWT pour obtenir user_id
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.user_id;
+
+        const formData = new FormData();
+        formData.append('file', videoFile);
+        formData.append('sender_id', userId);
+        formData.append('receiver_id', 'ADMIN');
+        formData.append('encrypted_key', encryptedKey);
+        formData.append('iv', iv);
+        formData.append('amount', amount);
+
+        try {
+          const response = await fetch(`${VIDEO_API}/upload`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Erreur upload');
+          }
+
+          const result = await response.json();
+          alert('✅ Vidéo uploadée avec succès !');
+
+          // Réinitialiser le formulaire
+          document.getElementById('uploadForm').reset();
+          document.getElementById('encryptedKey').value = '';
+          document.getElementById('ivAES').value = '';
+          document.getElementById('uploadBtn').disabled = true;
+          generatedAESKey = null;
+          generatedIV = null;
+        } catch (error) {
+          console.error('Erreur upload:', error);
+          alert('❌ Erreur upload: ' + error.message);
+        }
+      });
+    </script>
+  </body>
+</html>

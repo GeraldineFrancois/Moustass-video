@@ -20,14 +20,14 @@
 
 **Moustass Video** est un microservice production-ready qui gère:
 
-✅ **Upload sécurisé** de vidéos (.mp4, .ts)  
-✅ **Gestion complète** via API REST (8+ endpoints)  
-✅ **Interface web** interactive pour upload/download  
-✅ **Chiffrement** RSA-3072 + métadonnées  
-✅ **Expiration automatique** après 60 jours  
-✅ **Architecture modulaire** avec 4 composants  
-✅ **Sécurité** (anti-traversal, anti-XSS)  
-✅ **Performance** avec async/await et MySQL  
+✅ **Upload sécurisé** de vidéos (.mp4, .ts)
+✅ **Gestion complète** via API REST (8+ endpoints)
+✅ **Interface web** interactive pour upload/download
+✅ **Chiffrement** RSA-3072 + métadonnées
+✅ **Expiration automatique** après 60 jours
+✅ **Architecture modulaire** avec 4 composants
+✅ **Sécurité** (anti-traversal, anti-XSS)
+✅ **Performance** avec async/await et MySQL
 
 ### Structure du projet
 
@@ -87,37 +87,66 @@ moustass_video/
 
 ## 🚀 Démarrage rapide
 
-### Option 1️⃣: Local (Développement)
+### ⚠️ IMPORTANT - Configuration Sécurisée
+
+**Avant de démarrer, vous DEVEZ configurer les variables d'environnement :**
+
+```bash
+# Générer automatiquement le fichier .env avec des mots de passe sécurisés
+./generate-env.sh
+
+# OU manuellement
+cp .env.example .env
+# Puis éditer .env et changer TOUS les mots de passe
+```
+
+📖 **Voir [SECURITY_SETUP.md](./SECURITY_SETUP.md) pour plus de détails**
+
+---
+
+### Option 1️⃣: Docker Compose (Recommandé)
+
+```bash
+# 1. Générer la configuration sécurisée
+./generate-env.sh
+
+# 2. Démarrer tous les services
+docker compose up -d
+
+# 3. Vérifier que tout fonctionne
+docker compose ps
+
+# ✅ Ouvrir: http://localhost:8001 (Auth + UI)
+#           http://localhost:8002 (Videos API)
+#           http://localhost:8003 (Security API)
+```
+
+### Option 2️⃣: Local (Développement)
 
 ```bash
 # 1. Prérequis
 python --version      # 3.11+
 mysql --version       # 8.0+
 
-# 2. Venv
+# 2. Configuration
+./generate-env.sh     # Ou copier manuellement .env.example
+source .env           # Charger les variables
+
+# 3. Venv
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate     # Windows
 
-# 3. Dépendances
+# 4. Dépendances
 pip install -r requirements.txt
 
-# 4. Base de données
-mysql -u root -pMyStrongP@ss123! -e "CREATE DATABASE IF NOT EXISTS videos_db;"
-mysql -u root -pMyStrongP@ss123! videos_db < src/videos/init_database.sql
+# 5. Base de données
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS videos_db;"
+mysql -u root -p$MYSQL_ROOT_PASSWORD videos_db < src/videos/init_database.sql
 
-# 5. Lancer
+# 6. Lancer
 cd src/videos
 python main_upload.py
-
-# ✅ Ouvrir: http://localhost:8002
-```
-
-### Option 2️⃣: Docker Compose
-
-```bash
-cd src/videos
-docker-compose up -d
 
 # ✅ Ouvrir: http://localhost:8002
 ```
@@ -404,10 +433,10 @@ ls -ld uploads/
 
 ## 📝 Licence & Auteur
 
-**Projet**: Moustass Video Microservice  
-**Version**: 1.0.0  
-**Status**: ✅ Production-Ready  
-**Support**: Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)  
+**Projet**: Moustass Video Microservice
+**Version**: 1.0.0
+**Status**: ✅ Production-Ready
+**Support**: Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)
 
 ---
 
@@ -421,9 +450,9 @@ ls -ld uploads/
 
 ---
 
-**Questions?** Lire les docs ou vérifier les fichiers respectifs.  
-**Prêt à déployer?** Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)  
-**Besoin de détails?** Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)  
+**Questions?** Lire les docs ou vérifier les fichiers respectifs.
+**Prêt à déployer?** Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+**Besoin de détails?** Voir [ARCHITECTURE.md](./src/videos/ARCHITECTURE.md)
 
 🎉 **Merci d'utiliser Moustass Video!**
 python main_upload.py
@@ -736,6 +765,6 @@ Projet Moustass - 2026
 
 ---
 
-**Status**: ✅ Prêt pour développement et test  
-**Version**: 1.0.0  
+**Status**: ✅ Prêt pour développement et test
+**Version**: 1.0.0
 **Maintenability**: A+

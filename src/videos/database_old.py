@@ -1,8 +1,18 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+import os
 
-# adapte user / password / db_name
-DATABASE_URL = "mysql+pymysql://root:MyStrongP%40ss123%21@localhost:3306/videos_db"
+# Construction de l'URL de base de données depuis les variables d'environnement
+DB_USER = os.environ.get('VIDEO_DB_USER', 'root')
+DB_PASSWORD = os.environ.get('VIDEO_DB_PASSWORD', '')
+DB_HOST = os.environ.get('VIDEO_DB_HOST', 'localhost')
+DB_PORT = os.environ.get('VIDEO_DB_PORT', '3306')
+DB_NAME = os.environ.get('VIDEO_DB_NAME', 'videos_db')
+
+if not DB_PASSWORD:
+    raise ValueError("VIDEO_DB_PASSWORD environment variable must be set")
+
+DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(
     DATABASE_URL,

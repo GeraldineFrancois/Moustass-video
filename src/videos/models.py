@@ -19,6 +19,7 @@ class Video(Base):
     receiver_id = Column(String(36), nullable=False)
     storage_path = Column(String(255), nullable=False)
     encrypted_key = Column(Text, nullable=False)
+    iv = Column(String(24), nullable=True)  # IV AES-GCM en base64 (12 bytes)
     amount = Column(DECIMAL(15, 2), nullable=False)
     status = Column(Enum(VideoStatus, native_enum=False), default=VideoStatus.UPLOADED)
     signature = Column(Text, nullable=True)

@@ -20,7 +20,7 @@ if ! command -v docker compose &> /dev/null; then
 fi
 
 # Charger les variables d'environnement si elles existent
-if [ -f .env ]; then
+if [[ -f .env ]]; then
     echo "📝 Chargement de .env..."
     export $(cat .env | grep -v '#' | xargs)
 else

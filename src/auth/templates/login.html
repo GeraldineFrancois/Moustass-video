@@ -39,6 +39,14 @@
               </form>
               <div id="responseBox" class="mt-2" style="display:none">
                 <div class="mb-2">
+                  <label for="tokenText" class="form-label">Token JWT (Bearer)</label>
+                  <div class="input-group">
+                    <textarea id="tokenText" class="form-control" rows="2" readonly></textarea>
+                    <button id="copyToken" class="btn btn-outline-secondary" type="button">Copier</button>
+                  </div>
+                  <div class="form-text">Ce token commence par "ey". Il sera automatiquement stocké et utilisable dans la page Upload.</div>
+                </div>
+                <div class="mb-2">
                   <label for="privateKeyText" id="responseTitle" class="form-label">Clé privée</label>
                   <div class="input-group">
                     <textarea id="privateKeyText" class="form-control" rows="6" readonly></textarea>
@@ -60,6 +68,22 @@
       </div>
     </div>
     <script>
+      // Utility: safe JSON parse without throwing
+      function safeJsonParse(txt){
+        try{
+          return JSON.parse(txt);
+        }catch(err){
+          console.warn('safeJsonParse: invalid JSON', err);
+          return null;
+        }
+      }
+
+      // Helper: read response as text and attempt to parse JSON safely
+      async function parseJsonResponse(res){
+        const txt = await res.text();
+        const json = safeJsonParse(txt);
+        return { ok: res.ok, json: json, text: txt };
+      }
       function showSignup(role){
         document.getElementById('signup').style.display='block';
         document.getElementById('role').value = role;
@@ -92,9 +116,9 @@
                 localStorage.setItem('access_token', token);
                 // redirect based on role
                 if(role.toUpperCase().includes('ADMIN')){
-                  globalThis.location.href = '/admin/dashboard';
+                  globalThis.location.href = '/ui/index-admin.html';
                 }else{
-                  globalThis.location.href = '/client/dashboard';
+                  globalThis.location.href = '/ui/index-user.html';
                 }
               }else{
                 showResponse('Login', 'No access token returned');
@@ -104,6 +128,8 @@
             }
           });
         }
+
+
         if(f){
           f.addEventListener('submit', async (e)=>{
             e.preventDefault();
@@ -123,35 +149,29 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
               });
-              // read body once as text, then try parse JSON
-              const txt = await res.text();
-              let json = null;
-              try{
-                json = JSON.parse(txt);
-              }catch(error_){
-                // Non-JSON response from server
-                console.error('JSON parse error:', error_);
-                if(!res.ok){
-                  showResponse('Erreur serveur', txt);
-                  console.error('Server error response (non-JSON):', txt);
-                  return;
-                }
-                showResponse('Réponse inattendue', txt);
-                return;
-              }
-              if(!res.ok){
-                const msg = json.detail || json.message || JSON.stringify(json);
+              const { ok, json, text } = await parseJsonResponse(res);
+              if(!ok){
+                // prefer server-provided messages when available
+                const msg = json?.detail || json?.message || text || 'Erreur serveur';
                 showResponse('Erreur', msg);
                 return;
               }
-              const pk = json.private_key || json.privateKey || '';
+              const pk = json?.private_key || json?.privateKey || '';
+              const token = json?.access_token || '';
               if(pk){
-                // show both private and public keys when available
-                const pub = (json.user && json.user.public_key) ? json.user.public_key : '';
-                showResponseKeys(pk, pub);
-              } else {
-                showResponse('Succès', JSON.stringify(json));
+                const pub = json?.user?.public_key || '';
+                if(token) localStorage.setItem('access_token', token);
+                showResponseKeys(pk, pub, token);
+                return;
               }
+              if(token){
+                localStorage.setItem('access_token', token);
+                const box = document.getElementById('responseBox');
+                document.getElementById('tokenText').value = token;
+                box.style.display = 'block';
+                return;
+              }
+              showResponse('Succès', JSON.stringify(json));
             }catch(error_){
               console.error('Network error:', error_);
               showResponse('Erreur réseau', String(error_));
@@ -167,10 +187,11 @@
         box.style.display = 'block';
       }
 
-      function showResponseKeys(privateKey, publicKey){
+      function showResponseKeys(privateKey, publicKey, token){
         const box = document.getElementById('responseBox');
         document.getElementById('privateKeyText').value = privateKey || '';
         document.getElementById('publicKeyText').value = publicKey || '';
+        if(token){ document.getElementById('tokenText').value = token; }
         box.style.display = 'block';
 
         document.getElementById('copyPrivate').onclick = async ()=>{
@@ -195,6 +216,20 @@
             try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
           }
         };
+        const copyTokenBtn = document.getElementById('copyToken');
+        if(copyTokenBtn){
+          copyTokenBtn.onclick = async ()=>{
+            const ta = document.getElementById('tokenText');
+            try{
+              await navigator.clipboard.writeText(ta.value);
+              copyTokenBtn.textContent='Copié';
+              setTimeout(()=>copyTokenBtn.textContent='Copier',2000);
+            }catch(e){
+              console.warn('clipboard write failed for token', e);
+              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+            }
+          };
+        }
       }
     </script>
   </body>
