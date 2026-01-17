@@ -24,8 +24,14 @@ DB_PASSWORD = os.getenv("AUTH_DB_PASSWORD", "auth_password")
 DB_PORT = os.getenv("AUTH_DB_PORT", "3306")
 DB_NAME = os.getenv("AUTH_DB_NAME", "auth_db")
 
-# Build a SQLAlchemy connection URL for PyMySQL driver
-DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Allow tests to run without a MySQL instance by using an in-memory SQLite
+# database when `USE_SQLITE_IN_MEMORY=1` is set in the environment. This
+# keeps import-time behaviour fast and testable on developer machines.
+if os.getenv("USE_SQLITE_IN_MEMORY", "0") == "1":
+    DATABASE_URL = "sqlite:///:memory:"
+else:
+    # Build a SQLAlchemy connection URL for PyMySQL driver
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 def _create_engine_with_retry(url: str, max_retries: int = 10):
@@ -35,16 +41,23 @@ def _create_engine_with_retry(url: str, max_retries: int = 10):
     ensure the server is reachable. It exits the process on failure after
     `max_retries` attempts to avoid running the service in a broken state.
     """
+    # Special-case SQLite in-memory for fast local tests: no network retries
+    if url.startswith("sqlite"):
+        engine = create_engine(url, echo=False)
+        return engine
+
     retry_count = 0
     engine = None
     while retry_count < max_retries:
         try:
+            # pass a connect timeout only for networked DB drivers
+            connect_args = {"connect_timeout": 10}
             engine = create_engine(
                 url,
                 pool_pre_ping=True,
                 echo=False,
                 pool_recycle=3600,
-                connect_args={"connect_timeout": 10},
+                connect_args=connect_args,
             )
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
