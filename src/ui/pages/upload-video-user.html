@@ -76,7 +76,7 @@
                     <div class="card-body">
                         <div class="alert alert-info">
                             <i class="fa-solid fa-circle-info"></i>
-                            <strong>Instructions:</strong> Cliquez sur "Démarrer l'enregistrement" pour activer votre webcam. 
+                            <strong>Instructions:</strong> Cliquez sur "Démarrer l'enregistrement" pour activer votre webcam.
                             L'enregistrement durera automatiquement 5 secondes, puis votre vidéo sera envoyée avec les informations saisies ci-dessous.
                         </div>
 
@@ -152,9 +152,9 @@
 
         function pemToArrayBuffer(pem) {
             const b64 = pem
-                .replace(/-----BEGIN PUBLIC KEY-----/, '')
-                .replace(/-----END PUBLIC KEY-----/, '')
-                .replace(/\s/g, '');
+                .replaceAll('-----BEGIN PUBLIC KEY-----', '')
+                .replaceAll('-----END PUBLIC KEY-----', '')
+                .replaceAll(/\s/g, '');
             const binary = atob(b64);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) {
@@ -183,16 +183,16 @@
                 // Récupérer la clé publique RSA de l'admin
                 console.log('Fetching admin public key from:', `${SECURITY_API}/keys/admin-public`);
                 const response = await fetch(`${SECURITY_API}/keys/admin-public`);
-                
+
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Server response:', response.status, errorText);
                     throw new Error(`Impossible de récupérer la clé publique admin (HTTP ${response.status}): ${errorText}`);
                 }
-                
+
                 const data = await response.json();
                 const { public_key_pem } = data;
-                
+
                 if (!public_key_pem) {
                     throw new Error('Clé publique manquante dans la réponse du serveur');
                 }
@@ -229,9 +229,9 @@
 
         async function initWebcam() {
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 640, height: 480 }, 
-                    audio: true 
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: true
                 });
                 document.getElementById('videoPreview').srcObject = mediaStream;
                 return true;
@@ -276,8 +276,8 @@
             showCountdown(3, () => {
                 // Démarrer l\'enregistrement
                 recordedChunks = [];
-                mediaRecorder = new MediaRecorder(mediaStream, { 
-                    mimeType: 'video/webm;codecs=vp9' 
+                mediaRecorder = new MediaRecorder(mediaStream, {
+                    mimeType: 'video/webm;codecs=vp9'
                 });
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -354,7 +354,7 @@
 
                 const result = await response.json();
                 showStatus('success', `✅ Vidéo envoyée avec succès ! ID: ${result.video_id || result.id}`);
-                
+
                 // Réinitialiser après succès
                 setTimeout(() => {
                     window.location.href = '../index-user.html';
