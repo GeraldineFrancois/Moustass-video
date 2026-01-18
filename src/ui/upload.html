@@ -251,7 +251,7 @@
     const API_BASE = 'http://localhost:8002/api/videos';
 
     // Helpers
-    const escapeHTML = (v) => (v == null ? '' : String(v).replace(/[&<>'"`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c])));
+    const escapeHTML = (v) => (v == null ? '' : String(v).replaceAll(/[&<>'"`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c])));
     const formatDate = (s) => (!s ? 'N/A' : new Date(s).toLocaleString('fr-FR', { year:'numeric', month:'short', day:'numeric' }));
     const truncateId = (id) => (id ? id.substring(0, 8) + '...' + id.substring(id.length - 4) : '');
     // Cherche d'abord le token local à l'UI (authToken), sinon celui stocké par l'écran de login Auth (access_token)
@@ -262,7 +262,7 @@
       try {
         const parts = token.split('.');
         if (parts.length !== 3) return null;
-        const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+        const payload = JSON.parse(atob(parts[1].replaceAll('-','+').replaceAll('_','/')));
         return payload;
       } catch { return null; }
     }
