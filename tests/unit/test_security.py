@@ -1,11 +1,13 @@
 import os
 import importlib
+import secrets
 import pytest
 
 
 def setup_module(module):
-    # Ensure JWT_SECRET is set before importing module
-    os.environ.setdefault("JWT_SECRET", "A" * 64)
+    # Ensure JWT_SECRET is set before importing module.
+    # Use a runtime-generated secret to avoid committing credentials.
+    os.environ.setdefault("JWT_SECRET", secrets.token_urlsafe(48))
 
 
 def test_hash_and_verify_password():
