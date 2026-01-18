@@ -21,20 +21,31 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "video_password")
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "videos_db")
 
-DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Allow tests to use an in-memory SQLite DB when requested to avoid
+# depending on a running MySQL instance during unit tests.
+if os.getenv("USE_SQLITE_IN_MEMORY", "0") == "1":
+    DATABASE_URL = "sqlite:///:memory:"
+else:
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 def _create_engine_with_retry(url: str, max_retries: int = 10):
+    # If using SQLite for tests, create engine directly without network retries
+    if url.startswith("sqlite"):
+        engine = create_engine(url, echo=False)
+        return engine
+
     retry_count = 0
     engine = None
     while retry_count < max_retries:
         try:
+            connect_args = {"connect_timeout": 10}
             engine = create_engine(
                 url,
                 pool_pre_ping=True,
                 echo=False,
                 pool_recycle=3600,
-                connect_args={"connect_timeout": 10},
+                connect_args=connect_args,
             )
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
