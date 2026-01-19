@@ -1,7 +1,10 @@
-"""Database CRUD helpers for the auth subsystem.
+"""Helpers CRUD pour le module d'authentification.
 
-Small, focused functions that the service layer and API use. Keep logic
-minimal here — just perform DB operations and return ORM objects.
+Ce fichier contient des fonctions simples pour créer, lire, mettre à jour
+et supprimer des enregistrements liés aux utilisateurs et aux journaux.
+Chaque fonction réalise une opération SQLAlchemy minimale et retourne des
+objets ORM. Les règles métiers sont volontairement légères ici : la logique
+complexe appartient aux services ou aux contrôleurs.
 """
 
 from sqlalchemy.orm import Session
@@ -13,10 +16,9 @@ import secrets
 
 
 def create_user(db: Session, user: UserCreate, role: str = 'USER'):
-    # Generate an application-level salt for auditing/compatibility purposes.
-    # Note: we DO NOT append this salt to the password before hashing because
-    # modern schemes (passlib) handle salting internally and bcrypt has a 72
-    # byte input limit.
+    # Génère un sel applicatif pour l'audit et la compatibilité.
+    # Remarque : on N'APPEND PAS ce sel au mot de passe avant le hash car
+    # passlib gère le salage et bcrypt a une limite d'entrée (72 bytes).
     salt = secrets.token_hex(16)
     phash = hash_password(user.password)
     db_user = models.User(
@@ -35,12 +37,12 @@ def create_user(db: Session, user: UserCreate, role: str = 'USER'):
 
 
 def get_user_by_email(db: Session, email: str):
-    """Return the first user matching `email` or None."""
+    """Retourne le premier utilisateur correspondant à `email` ou None."""
     return db.query(models.User).filter(models.User.email == email).first()
 
 
 def delete_user(db: Session, user_id: int):
-    # Use session get by primary key
+    # Supprime un utilisateur en utilisant sa clé primaire
     u = db.query(models.User).get(user_id)
     if u:
         db.delete(u)
@@ -50,7 +52,7 @@ def delete_user(db: Session, user_id: int):
 
 
 def set_public_key(db: Session, user_id: int, public_pem: str):
-    """Store the user's public key and clear the `first_login` flag."""
+    """Stocke la clé publique de l'utilisateur et désactive `first_login`."""
     u = db.query(models.User).get(user_id)
     if u:
         u.public_key = public_pem
@@ -63,7 +65,7 @@ def set_public_key(db: Session, user_id: int, public_pem: str):
 
 
 def log_event(db: Session, action_type: str, user_id: int, success: int = 1, **kwargs):
-    # Lightweight audit log used by the auth service (login, create, delete)
+    # Journal d'audit léger utilisé par le service (login, création, suppression)
     entry = models.UsersLog(
         action_type=action_type,
         user_id=user_id,
@@ -80,10 +82,10 @@ def log_event(db: Session, action_type: str, user_id: int, success: int = 1, **k
 
 
 def get_logs_for_user(db: Session, user_id: int, limit: int = 100):
-    """Return recent log entries for a given user ordered newest first."""
+    """Retourne les entrées de journal récentes pour un utilisateur (plus récentes d'abord)."""
     return db.query(models.UsersLog).filter(models.UsersLog.user_id == user_id).order_by(models.UsersLog.log_date.desc()).limit(limit).all()
 
 
 def get_all_logs(db: Session, limit: int = 500):
-    """Return recent log entries for all users ordered newest first."""
+    """Retourne les journaux récents pour tous les utilisateurs (plus récents d'abord)."""
     return db.query(models.UsersLog).order_by(models.UsersLog.log_date.desc()).limit(limit).all()

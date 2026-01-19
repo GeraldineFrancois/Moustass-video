@@ -141,9 +141,9 @@
       // Fonction pour convertir PEM en ArrayBuffer
       function pemToArrayBuffer(pem) {
         const b64 = pem
-          .replace(/-----BEGIN PUBLIC KEY-----/, '')
-          .replace(/-----END PUBLIC KEY-----/, '')
-          .replace(/\s/g, '');
+          .replaceAll('-----BEGIN PUBLIC KEY-----', '')
+          .replaceAll('-----END PUBLIC KEY-----', '')
+          .replaceAll(/\s/g, '');
         const binary = atob(b64);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {
@@ -173,28 +173,28 @@
 
           // 4. Récupérer la clé publique RSA de l'admin
           console.log('Fetching admin public key from:', `${SECURITY_API}/keys/admin-public`);
-          
+
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-          
+
           const response = await fetch(`${SECURITY_API}/keys/admin-public`, {
             signal: controller.signal
           });
-          
+
           clearTimeout(timeoutId);
-          
+
           if (!response.ok) {
             const errorText = await response.text();
             console.error('Server response:', errorText);
             throw new Error(`HTTP ${response.status}: ${errorText}`);
           }
-          
+
           const data = await response.json();
-          
+
           if (!data.public_key_pem) {
             throw new Error('Clé publique manquante dans la réponse');
           }
-          
+
           const public_key_pem = data.public_key_pem;
 
           // 5. Importer la clé publique RSA
@@ -225,9 +225,9 @@
           alert('✅ Clés générées avec succès !');
         } catch (error) {
           console.error('Erreur génération clés:', error);
-          
+
           let errorMessage = 'Erreur lors de la génération des clés';
-          
+
           if (error.name === 'AbortError') {
             errorMessage = 'Timeout: Le service de sécurité ne répond pas. Vérifiez que http://localhost:8003 est accessible.';
           } else if (error.message.includes('Failed to fetch')) {
@@ -238,7 +238,7 @@
           } else {
             errorMessage += ': ' + error.message;
           }
-          
+
           alert('❌ ' + errorMessage);
         }
       }

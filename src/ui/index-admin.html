@@ -114,7 +114,7 @@
     const AUTH_API = '/';
     const VIDEO_API = 'http://localhost:8002/api/videos';
 
-    const cleanB64 = (v) => (v || '').replace(/\s+/g, '');
+    const cleanB64 = (v) => (v || '').replaceAll(/\s+/g, '');
     const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.charCodeAt(0));
 
     function setVideoContext(videoId){

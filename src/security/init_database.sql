@@ -4,11 +4,21 @@
 CREATE DATABASE IF NOT EXISTS security_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- First, create user if not exists (root creates it)
-CREATE USER IF NOT EXISTS 'security_user'@'%' IDENTIFIED BY 'security_password';
-CREATE USER IF NOT EXISTS 'security_user'@'localhost' IDENTIFIED BY 'security_password';
+-- Define the password in a single place to avoid duplicated string literals
+SET @SECURITY_PASSWORD = 'security_password';
+
+-- Define the username in a single place to avoid duplicated literals
+SET @SECURITY_USER = 'security_user';
+
+SET @stmt = CONCAT("CREATE USER IF NOT EXISTS '", @SECURITY_USER, "'@'%' IDENTIFIED BY '", @SECURITY_PASSWORD, "';");
+PREPARE stmt FROM @stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @stmt = CONCAT("CREATE USER IF NOT EXISTS '", @SECURITY_USER, "'@'localhost' IDENTIFIED BY '", @SECURITY_PASSWORD, "';");
+PREPARE stmt FROM @stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Grant ALL privileges on security_db to security_user
-GRANT ALL PRIVILEGES ON security_db.* TO 'security_user'@'%' WITH GRANT OPTION;
+SET @stmt = CONCAT("GRANT ALL PRIVILEGES ON security_db.* TO '", @SECURITY_USER, "'@'%' WITH GRANT OPTION;");
+PREPARE stmt FROM @stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 FLUSH PRIVILEGES;
 
 USE security_db;

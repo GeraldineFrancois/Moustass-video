@@ -10,7 +10,7 @@ echo "======================================"
 echo "📦 Installation des dépendances..."
 pip install -q -r requirements.txt
 
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo "❌ Erreur lors de l'installation des dépendances"
     exit 1
 fi
@@ -20,7 +20,7 @@ mkdir -p uploads
 echo "📁 Dossier uploads créé"
 
 # Vérifier les variables d'environnement
-if [ ! -f ".env" ]; then
+if [[ ! -f ".env" ]]; then
     echo "⚠️  Fichier .env non trouvé, créez-le avec les paramètres de base de données"
 fi
 

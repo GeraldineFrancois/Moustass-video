@@ -10,19 +10,19 @@
 	margin-left: 2%;
 }
 
-#card-index{
-	padding: 10px;
-	color: white;
-	position: relative;
-	border: none;
+.card-index{
+	padding:1rem;
+	border-radius:0.5rem;
 }
 
-#card-index p{
-	font-size: 14pt;
-	display: inline-block;
+.card-index p{
+	margin:0;
 }
 
-#card-index p:nth-of-type(2){
+.card-index p:nth-of-type(2){
+	font-weight:700;
+	font-size:1.4rem;
+}
 	position: absolute;
 	top: 0;
 	right: 0%;
