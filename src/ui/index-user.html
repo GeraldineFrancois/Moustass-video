@@ -12,7 +12,7 @@
 <body>
 	<nav class="navbar navbar-expand-lg bg-body-tertiary">
 		<div class="container-fluid">
-			<a class="navbar-brand" href="#"><i class="fa-solid fa-video"></i> Moustass Video</a>
+			<a class="navbar-brand" href="#" role="button" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault(); this.click();}"><i class="fa-solid fa-video"></i> Moustass Video</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 			</button>
@@ -22,7 +22,7 @@
 						<a class="nav-link active" aria-current="page" href="./index-user.html"><i class="fa-solid fa-house"></i> Accueil</a>
 					</li>
 					<li class="nav-item dropdown">
-						<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault(); this.click();}">
 							<i class="fa-solid fa-video"></i> Vidéo
 						</a>
 						<ul class="dropdown-menu">
