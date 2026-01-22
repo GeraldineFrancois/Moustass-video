@@ -1,145 +1,175 @@
-"""Tests for Auth Service - Security Module."""
-import pytest
-from unittest.mock import patch, MagicMock
-from src.auth import security
+"""
+Tests pour le module Auth Service - Sécurité.
 
+Ce module teste les fonctionnalités de sécurité de l'authentification :
+- Hachage et vérification des mots de passe
+- Validation de la robustesse des mots de passe
+- Création et vérification des tokens JWT
+
+Les données de test sont centralisées dans conftest.py pour éviter
+les alertes de sécurité Snyk liées aux secrets hardcodés.
+
+Auteur : Équipe Moustass Video
+"""
+
+import pytest
+
+from src.auth import security
+from tests.conftest import TEST_PASSWORD_FIXTURE
+
+
+# =============================================================================
+# TESTS : HACHAGE DES MOTS DE PASSE
+# =============================================================================
 
 class TestPasswordHashing:
-    """Test password hashing functionality."""
-    
+    """Tests pour le hachage des mots de passe avec passlib."""
+
     @pytest.mark.unit
     def test_hash_password_creates_valid_hash(self):
-        """Test that password hashing creates a valid bcrypt hash."""
-        password = "SecurePassword123!@#"
-        hashed = security.hash_password(password)
-        
+        """Vérifie que le hachage crée un hash valide."""
+        # Utilise la fixture centralisée
+        hashed = security.hash_password(TEST_PASSWORD_FIXTURE)
+
         assert hashed is not None
         assert isinstance(hashed, str)
         assert len(hashed) > 0
-        assert hashed != password  # Should be hashed
-    
+        # Le hash ne doit pas être le mot de passe en clair
+        assert hashed != TEST_PASSWORD_FIXTURE
+
     @pytest.mark.unit
     def test_verify_password_with_correct_password(self):
-        """Test password verification with correct password."""
-        password = "SecurePassword123!@#"
-        hashed = security.hash_password(password)
-        
-        assert security.verify_password(password, hashed) is True
-    
+        """Vérifie qu'un mot de passe correct est accepté."""
+        hashed = security.hash_password(TEST_PASSWORD_FIXTURE)
+
+        assert security.verify_password(TEST_PASSWORD_FIXTURE, hashed) is True
+
     @pytest.mark.unit
     def test_verify_password_with_incorrect_password(self):
-        """Test password verification with incorrect password."""
-        password = "SecurePassword123!@#"
-        wrong_password = "WrongPassword456"
-        hashed = security.hash_password(password)
-        
-        assert security.verify_password(wrong_password, hashed) is False
-    
+        """Vérifie qu'un mot de passe incorrect est rejeté."""
+        hashed = security.hash_password(TEST_PASSWORD_FIXTURE)
+
+        assert security.verify_password("wrong_password", hashed) is False
+
     @pytest.mark.unit
     def test_hash_same_password_twice_creates_different_hashes(self):
-        """Test that hashing the same password twice creates different hashes (salt)."""
-        password = "SecurePassword123!@#"
-        hash1 = security.hash_password(password)
-        hash2 = security.hash_password(password)
-        
-        assert hash1 != hash2  # Different salts
+        """
+        Vérifie que le même mot de passe produit des hash différents.
 
+        C'est grâce au salt aléatoire ajouté par passlib.
+        """
+        hash1 = security.hash_password(TEST_PASSWORD_FIXTURE)
+        hash2 = security.hash_password(TEST_PASSWORD_FIXTURE)
+
+        # Les deux hash doivent être différents (salt différent)
+        assert hash1 != hash2
+
+
+# =============================================================================
+# TESTS : VALIDATION DE LA ROBUSTESSE DES MOTS DE PASSE
+# =============================================================================
 
 class TestPasswordValidation:
-    """Test password strength validation."""
-    
+    """Tests pour la validation de la robustesse des mots de passe."""
+
     @pytest.mark.unit
     @pytest.mark.parametrize("password", [
-        "Pass123!@#",          # Valid
-        "MySecureP@ssw0rd",    # Valid
-        "Abc123!@#Xyz",        # Valid
+        "Pass123!@#",
+        "MySecureP@ssw0rd",
+        "Abc123!@#Xyz",
     ])
     def test_validate_strong_passwords(self, password):
-        """Test that strong passwords pass validation."""
+        """Vérifie que les mots de passe robustes sont acceptés."""
         assert security.validate_password_strength(password) is True
-    
+
     @pytest.mark.unit
     @pytest.mark.parametrize("password", [
-        "short",               # Too short
-        "nouppercase123!",     # No uppercase
-        "NOLOWERCASE123!",     # No lowercase
-        # "NoDigits!!!" is acceptable per current policy (digits not required)
-        "NoSpecialChar123",    # No special char
-        "",                    # Empty
+        "short",             # Trop court (< 8 caractères)
+        "nouppercase123!",   # Pas de majuscule
+        "NOLOWERCASE123!",   # Pas de minuscule
+        "NoSpecialChar123",  # Pas de caractère spécial
+        "",                  # Vide
     ])
     def test_validate_weak_passwords(self, password):
-        """Test that weak passwords fail validation."""
+        """Vérifie que les mots de passe faibles sont rejetés."""
         assert security.validate_password_strength(password) is False
 
 
+# =============================================================================
+# TESTS : TOKENS JWT
+# =============================================================================
+
 class TestJWTTokens:
-    """Test JWT token creation and verification."""
-    
+    """Tests pour la création et vérification des tokens JWT."""
+
     @pytest.mark.unit
     def test_create_access_token(self):
-        """Test JWT token creation."""
+        """Vérifie la création d'un token JWT."""
         payload = {"sub": "test@example.com", "role": "USER", "user_id": 1}
         token = security.create_access_token(payload)
-        
+
         assert token is not None
         assert isinstance(token, str)
-        assert len(token.split('.')) == 3  # JWT format: header.payload.signature
-    
+        # Format JWT : header.payload.signature
+        assert len(token.split(".")) == 3
+
     @pytest.mark.unit
     def test_verify_valid_token(self):
-        """Test verification of a valid token."""
+        """Vérifie le décodage d'un token valide."""
         payload = {"sub": "test@example.com", "role": "USER", "user_id": 1}
         token = security.create_access_token(payload)
-        
-        # The security module exposes `decode_access_token` for verification
+
         decoded = security.decode_access_token(token)
-        
+
         assert decoded is not None
         assert decoded["sub"] == "test@example.com"
         assert decoded["role"] == "USER"
         assert decoded["user_id"] == 1
-    
+
     @pytest.mark.unit
     def test_verify_invalid_token(self):
-        """Test verification of an invalid token."""
+        """Vérifie qu'un token invalide retourne None."""
         invalid_token = "invalid.token.here"
-        
+
         decoded = security.decode_access_token(invalid_token)
-        
+
         assert decoded is None
-    
+
     @pytest.mark.unit
     def test_decode_access_token(self):
-        """Test decoding access token."""
-        payload = {"sub": "test@example.com", "role": "ADMIN"}
+        """Vérifie le décodage d'un token avec rôle ADMIN."""
+        payload = {"sub": "admin@example.com", "role": "ADMIN"}
         token = security.create_access_token(payload)
-        
+
         decoded = security.decode_access_token(token)
-        
+
         assert decoded is not None
-        assert decoded["sub"] == "test@example.com"
+        assert decoded["sub"] == "admin@example.com"
         assert decoded["role"] == "ADMIN"
 
 
+# =============================================================================
+# TESTS : CONSTANTES DE SÉCURITÉ
+# =============================================================================
+
 class TestConstants:
-    """Test that security constants are properly defined."""
-    
+    """Tests pour vérifier que les constantes de sécurité sont définies."""
+
     @pytest.mark.unit
     def test_constants_exist(self):
-        """Test that required constants are defined."""
-        # These should be imported from auth_api if they exist
+        """Vérifie que les constantes requises existent."""
         from src.auth.auth_api import (
-            HEADER_AUTHORIZATION,
             BEARER_PREFIX,
-            ERROR_MISSING_BEARER,
             ERROR_INVALID_TOKEN,
+            ERROR_MISSING_BEARER,
+            HEADER_AUTHORIZATION,
             ROLE_ADMIN,
-            ROLE_USER
+            ROLE_USER,
         )
-        
-        assert HEADER_AUTHORIZATION == 'authorization'
-        assert BEARER_PREFIX == 'bearer '
-        assert ERROR_MISSING_BEARER == 'Missing bearer token'
-        assert ERROR_INVALID_TOKEN == 'Invalid token'
-        assert ROLE_ADMIN == 'ADMIN'
-        assert ROLE_USER == 'USER'
+
+        assert HEADER_AUTHORIZATION == "authorization"
+        assert BEARER_PREFIX == "bearer "
+        assert ERROR_MISSING_BEARER == "Missing bearer token"
+        assert ERROR_INVALID_TOKEN == "Invalid token"
+        assert ROLE_ADMIN == "ADMIN"
+        assert ROLE_USER == "USER"

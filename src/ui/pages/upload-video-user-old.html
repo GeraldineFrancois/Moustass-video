@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload video</title>
-    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css"
-    />
+>
   </head>
   <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Moustass Video</a>
+        <a class="navbar-brand" href="#" role="button" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault(); this.click();}">Moustass Video</a>
         <button
           class="navbar-toggler"
           type="button"
@@ -43,6 +43,7 @@
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
+                onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault(); this.click();}"
               >
                 Video
               </a>
@@ -78,24 +79,24 @@
         <!-- Vidéo -->
         <div class="mb-3">
           <label for="videoFile" class="form-label">Sélectionnez une vidéo :</label>
-          <input class="form-control" type="file" id="videoFile" accept="video/*" required />
+          <input class="form-control" type="file" id="videoFile" accept="video/*" required>
         </div>
 
         <!-- Destinataire -->
         <div class="mb-3">
           <label for="recipientEmail" class="form-label">Destinataire :</label>
-          <input class="form-control" type="text" id="recipientEmail" value="Admin" readonly />
+          <input class="form-control" type="text" id="recipientEmail" value="Admin" readonly>
         </div>
 
         <!-- Montant -->
         <div class="mb-3">
           <label for="amount" class="form-label">Montant (RS) :</label>
-          <input class="form-control" type="number" id="amount" value="850" required />
+          <input class="form-control" type="number" id="amount" value="850" required>
         </div>
 
         <!-- Clé AES (générée automatiquement) -->
         <div class="mb-3">
-          <label class="form-label">🔑 Clé AES chiffrée (générée automatiquement)</label>
+          <label for="encryptedKey" class="form-label">🔑 Clé AES chiffrée (générée automatiquement)</label>
           <textarea
             id="encryptedKey"
             class="form-control"
@@ -108,14 +109,14 @@
 
         <!-- IV (généré automatiquement) -->
         <div class="mb-3">
-          <label class="form-label">📍 IV AES-GCM (généré automatiquement)</label>
+          <label for="ivAES" class="form-label">📍 IV AES-GCM (généré automatiquement)</label>
           <input
             type="text"
             id="ivAES"
             class="form-control"
             readonly
             placeholder="Cliquez sur 'Générer Clés' pour créer"
-          />
+>
           <small class="text-muted">Vecteur d'initialisation (12 bytes aléatoires)</small>
         </div>
 
@@ -145,8 +146,9 @@
           .replaceAll(/\s/g, '');
         const binary = atob(b64);
         const bytes = new Uint8Array(binary.length);
+        // Note: Pour la conversion binaire, on utilise codePointAt (compatible Unicode)
         for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
+          bytes[i] = binary.codePointAt(i);
         }
         return bytes.buffer;
       }
@@ -156,7 +158,8 @@
         try {
           // 1. Générer IV aléatoire (12 bytes)
           generatedIV = crypto.getRandomValues(new Uint8Array(12));
-          const ivBase64 = btoa(String.fromCharCode(...generatedIV));
+          // Note: Pour la conversion binaire vers Base64, on utilise fromCodePoint
+          const ivBase64 = btoa(String.fromCodePoint(...generatedIV));
           document.getElementById('ivAES').value = ivBase64;
 
           // 2. Générer clé AES-256 aléatoire
@@ -213,8 +216,9 @@
           );
 
           // 7. Encoder en Base64
+          // Note: Pour la conversion binaire vers Base64, on utilise fromCodePoint
           const encryptedKeyBase64 = btoa(
-            String.fromCharCode(...new Uint8Array(encryptedKeyBuffer))
+            String.fromCodePoint(...new Uint8Array(encryptedKeyBuffer))
           );
           document.getElementById('encryptedKey').value = encryptedKeyBase64;
 

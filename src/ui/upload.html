@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Moustass · Upload Vidéo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet">
+  <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous">
+  <!-- Font Awesome 7.0.1 avec vérification d'intégrité -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" integrity="sha384-XuLA4HbJ7VjouBD8Bm/t7EoCTEoH6pCZQ+K6G5sUqLK5DRZbn7nL7TLbqMKqv5WN" crossorigin="anonymous">
   <style>
     body { background: linear-gradient(135deg, #0f172a, #1f2937); }
     .page { max-width: 1100px; margin: 24px auto; }
@@ -44,9 +46,9 @@
 
             <!-- Token JWT -->
             <div class="mb-4 p-3 bg-info bg-opacity-10 rounded">
-              <label class="form-label"><strong>🔐 Token JWT (Bearer) - SECTION BLEUE</strong></label>
+              <label for="tokenInput" class="form-label"><strong>🔐 Token JWT (Bearer) - SECTION BLEUE</strong></label>
               <small class="text-muted d-block mb-2">
-                ✓ Copier APRÈS signup/login (commence par "ey")<br/>
+                ✓ Copier APRÈS signup/login (commence par "ey")<br>
                 ✗ Pas la clé privée! La clé privée va dans la section ROUGE ci-dessous
               </small>
               <textarea id="tokenInput" class="form-control" rows="2" placeholder="eyJhbGciOiJIUzI1NiIs..."></textarea>
@@ -59,19 +61,19 @@
 
             <!-- Identité Utilisateur -->
             <div class="mb-4 p-3 bg-success bg-opacity-10 rounded">
-              <label class="form-label"><strong>👤 ID Utilisateur</strong></label>
+              <label for="userId" class="form-label"><strong>👤 ID Utilisateur</strong></label>
               <small class="text-muted d-block mb-2">Extrait du token ou saisi manuellement</small>
-              <input id="userId" class="form-control" placeholder="Votre ID utilisateur" />
+              <input id="userId" class="form-control" placeholder="Votre ID utilisateur">
             </div>
 
             <!-- Destinataire (toujours Admin) -->
             <div class="mb-4 p-3 bg-warning bg-opacity-10 rounded">
-              <label class="form-label"><strong>📬 Destinataire</strong></label>
+              <label for="receiverId" class="form-label"><strong>📬 Destinataire</strong></label>
               <small class="text-muted d-block mb-2">Fixé à ADMIN (non modifiable)</small>
-              <input id="receiverId" class="form-control" value="ADMIN" readonly />
+              <input id="receiverId" class="form-control" value="ADMIN" readonly>
             </div>
 
-            <hr />
+            <hr>
 
             <!-- Clés RSA -->
             <div class="mb-3">
@@ -79,11 +81,11 @@
 
               <!-- Clé Privée -->
               <div class="mb-3 p-2 border-start border-danger border-4">
-                <label class="form-label text-danger"><strong>🔑 Clé PRIVÉE - SECTION ROUGE - UTILISÉE POUR SIGNER</strong></label>
+                <label for="privateKeyForStorage" class="form-label text-danger"><strong>🔑 Clé PRIVÉE - SECTION ROUGE - UTILISÉE POUR SIGNER</strong></label>
                 <small class="text-muted d-block mb-2">
-                  Format : <code>-----BEGIN PRIVATE KEY-----</code><br/>
-                  <strong style="color: darkred;">⚠️ NE JAMAIS copier dans le champ Token JWT ci-dessus!</strong><br/>
-                  Utilisée UNIQUEMENT : Quand vous cliquez "Signer" (pas pour l'upload)<br/>
+                  Format : <code>-----BEGIN PRIVATE KEY-----</code><br>
+                  <strong style="color: darkred;">⚠️ NE JAMAIS copier dans le champ Token JWT ci-dessus!</strong><br>
+                  Utilisée UNIQUEMENT : Quand vous cliquez "Signer" (pas pour l'upload)<br>
                   Reste 100% côté client (jamais envoyée au serveur)
                 </small>
                 <textarea id="privateKeyForStorage" class="form-control form-control-sm" rows="3" placeholder="-----BEGIN PRIVATE KEY-----
@@ -93,8 +95,8 @@
 
               <!-- Clé Publique -->
               <div class="p-2 border-start border-success border-4">
-                <label class="form-label text-success"><strong>🔓 Clé PUBLIQUE</strong></label>
-                <small class="text-muted d-block mb-2">Format : <code>-----BEGIN PUBLIC KEY-----</code><br/>Utilisée pour : VÉRIFIER les signatures</small>
+                <label for="publicKeyForStorage" class="form-label text-success"><strong>🔓 Clé PUBLIQUE</strong></label>
+                <small class="text-muted d-block mb-2">Format : <code>-----BEGIN PUBLIC KEY-----</code><br>Utilisée pour : VÉRIFIER les signatures</small>
                 <textarea id="publicKeyForStorage" class="form-control form-control-sm" rows="3" placeholder="-----BEGIN PUBLIC KEY-----
 ...
 -----END PUBLIC KEY-----"></textarea>
@@ -112,13 +114,13 @@
 
             <!-- Guide d'utilisation -->
             <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
-              <strong>📖 Guide rapide :</strong><br/>
+              <strong>📖 Guide rapide :</strong><br>
               <small>
-                1️⃣ Collez le <strong>Token JWT</strong> (bleu, section à gauche) → user_id auto-rempli<br/>
-                2️⃣ Sélectionnez une vidéo, montant, clé chiffrée<br/>
-                3️⃣ Cliquez "Uploader" (envoie token + fichier)<br/>
-                4️⃣ Une fois uploadée, cliquez "Signer" dans la liste<br/>
-                5️⃣ Dans le modal, collez votre <strong>Clé PRIVÉE</strong> (rouge, section à gauche)<br/>
+                1️⃣ Collez le <strong>Token JWT</strong> (bleu, section à gauche) → user_id auto-rempli<br>
+                2️⃣ Sélectionnez une vidéo, montant, clé chiffrée<br>
+                3️⃣ Cliquez "Uploader" (envoie token + fichier)<br>
+                4️⃣ Une fois uploadée, cliquez "Signer" dans la liste<br>
+                5️⃣ Dans le modal, collez votre <strong>Clé PRIVÉE</strong> (rouge, section à gauche)<br>
                 <strong style="color: red;">⚠️ IMPORTANT : Clé privée ≠ Token JWT! Voir les couleurs.</strong>
               </small>
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -127,33 +129,33 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="videoFile" class="form-label"><strong>Vidéo (.mp4 / .ts)</strong></label>
-                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.webm,.ts,video/mp4,video/webm,video/*" capture="user" required />
+                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.webm,.ts,video/mp4,video/webm,video/*" capture="user" required>
                   <div class="form-text">Formats autorisés: .mp4, .webm, .ts (webcam: video/webm / video/*)</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Montant (RS)</strong></label>
+                  <label for="amount" class="form-label"><strong>Montant (RS)</strong></label>
                   <div class="input-group">
                     <span class="input-group-text">RS</span>
-                    <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0" placeholder="0.00" required />
+                    <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0" placeholder="0.00" required>
                   </div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label"><strong>ID Expéditeur (vous)</strong></label>
-                  <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="Votre ID utilisateur" required />
+                  <label for="senderId" class="form-label"><strong>ID Expéditeur (vous)</strong></label>
+                  <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="Votre ID utilisateur" required>
                   <div class="form-text">Éditable. Rempli auto depuis le token JWT.</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Destinataire</strong></label>
-                  <input type="text" id="receiverIdForm" name="receiver_id" class="form-control" value="ADMIN" readonly required />
+                  <label for="receiverIdForm" class="form-label"><strong>Destinataire</strong></label>
+                  <input type="text" id="receiverIdForm" name="receiver_id" class="form-control" value="ADMIN" readonly required>
                   <div class="form-text">Toujours ADMIN (non modifiable).</div>
                 </div>
                 <div class="col-12">
-                  <label class="form-label"><strong>Clé AES chiffrée (Base64)</strong></label>
+                  <label for="encryptedKey" class="form-label"><strong>Clé AES chiffrée (Base64)</strong></label>
                   <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="2" placeholder="Collez la clé déjà chiffrée avec RSA-3072" required></textarea>
                   <div class="form-text">Clé de chiffrement AES, elle-même chiffrée avec RSA-3072.</div>
                 </div>
                 <div class="col-12">
-                  <label class="form-label"><strong>IV AES-GCM (Base64)</strong></label>
+                  <label for="ivAES" class="form-label"><strong>IV AES-GCM (Base64)</strong></label>
                   <div class="input-group">
                     <textarea id="ivAES" name="iv" class="form-control" rows="1" placeholder="IV généré automatiquement..." readonly required></textarea>
                     <button class="btn btn-outline-secondary" type="button" onclick="generateIV()"><i class="fa-solid fa-dice me-1"></i>Générer IV</button>
@@ -481,8 +483,8 @@
         const iv = new Uint8Array(12);
         crypto.getRandomValues(iv);
 
-        // Convertir en Base64
-        const ivBase64 = btoa(String.fromCharCode(...iv));
+        // Convertir en Base64 (utilise fromCodePoint pour compatibilité Unicode)
+        const ivBase64 = btoa(String.fromCodePoint(...iv));
 
         // Afficher dans le champ
         document.getElementById('ivAES').value = ivBase64;

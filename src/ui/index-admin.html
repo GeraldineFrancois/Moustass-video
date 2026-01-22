@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard Admin</title>
   <link rel="stylesheet" type="text/css" href="css/index.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
@@ -71,56 +71,141 @@
     </div>
 
     <div class="row g-4">
-      <div class="col-md-8">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div>
-            <h2 class="h4 mb-0">Liste des vidéos</h2>
-            <div class="text-muted small">Sélectionner, récupérer la clé et télécharger/déchiffrer.</div>
+      <div class="col-12">
+        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-videos" data-bs-toggle="tab" data-bs-target="#pane-videos" type="button" role="tab" aria-controls="pane-videos" aria-selected="true">Liste des vidéos</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-user-logs" data-bs-toggle="tab" data-bs-target="#pane-user-logs" type="button" role="tab" aria-controls="pane-user-logs" aria-selected="false">Logs utilisateurs</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-admin-logs" data-bs-toggle="tab" data-bs-target="#pane-admin-logs" type="button" role="tab" aria-controls="pane-admin-logs" aria-selected="false">Logs admin</button>
+          </li>
+        </ul>
+        <div class="tab-content border p-3" id="adminTabsContent">
+          <div class="tab-pane fade show active" id="pane-videos" role="tabpanel" aria-labelledby="tab-videos">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <h2 class="h4 mb-0">Liste des vidéos</h2>
+                <div class="text-muted small">Sélectionner, récupérer la clé et télécharger/déchiffrer.</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="refreshVideosBtn"><i class="fa-solid fa-rotate"></i> Actualiser</button>
+                <button class="btn btn-outline-secondary btn-sm" id="resetVideoCtxBtn"><i class="fa-solid fa-eraser"></i> Reset</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover align-middle">
+                <thead>
+                  <tr><th>ID</th><th>Expéditeur</th><th>Destinataire</th><th>Statut</th><th>Signée</th><th>Montant</th><th>Expire</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="adminVideosBody">
+                  <tr id="adminVideosEmpty"><td colspan="8" class="text-center text-muted py-3">Aucune vidéo</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary btn-sm" id="refreshVideosBtn"><i class="fa-solid fa-rotate"></i> Actualiser</button>
-            <button class="btn btn-outline-secondary btn-sm" id="resetVideoCtxBtn"><i class="fa-solid fa-eraser"></i> Reset</button>
+
+          <div class="tab-pane fade" id="pane-user-logs" role="tabpanel" aria-labelledby="tab-user-logs">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <h2 class="h4 mb-0">Logs utilisateurs</h2>
+                <div class="text-muted small">Événements utilisateur : uploads, signatures, téléchargements.</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="refreshUserLogsBtn"><i class="fa-solid fa-rotate"></i> Actualiser</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover align-middle">
+                <thead>
+                  <tr><th>User ID</th><th>Action</th><th>Succès</th><th>Vidéo</th><th>Signée</th><th>Montant</th><th>Timestamp</th></tr>
+                </thead>
+                <tbody id="userLogsBody">
+                  <tr id="userLogsEmpty"><td colspan="7" class="text-center text-muted py-3">Aucun log</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle">
-            <thead>
-              <tr><th>ID</th><th>Expéditeur</th><th>Destinataire</th><th>Statut</th><th>Signée</th><th>Montant</th><th>Expire</th><th>Actions</th></tr>
-            </thead>
-            <tbody id="adminVideosBody">
-              <tr id="adminVideosEmpty"><td colspan="8" class="text-center text-muted py-3">Aucune vidéo</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <h2 class="h4 mb-2">Journaux des logs</h2>
-        <div class="table-responsive mb-2">
-          <table class="table table-striped table-hover align-middle">
-            <thead><tr><th>User ID</th><th>Succès</th><th>Action</th><th>Timestamp</th></tr></thead>
-            <tbody id="logsBody">
-              <tr id="logsEmpty"><td colspan="4" class="text-center text-muted py-3">Aucun log</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-primary btn-sm" id="refreshLogsBtn"><i class="fa-solid fa-rotate"></i> Actualiser</button>
+
+          <div class="tab-pane fade" id="pane-admin-logs" role="tabpanel" aria-labelledby="tab-admin-logs">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <h2 class="h4 mb-0">Logs admin</h2>
+                <div class="text-muted small">Connexions et actions administrateur.</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="refreshAdminLogsBtn"><i class="fa-solid fa-rotate"></i> Actualiser</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover align-middle">
+                <thead>
+                  <tr><th>Date connexion</th><th>Action</th><th>Succès</th><th>Timestamp</th><th>Vidéo</th></tr>
+                </thead>
+                <tbody id="adminLogsBody">
+                  <tr id="adminLogsEmpty"><td colspan="5" class="text-center text-muted py-3">Aucun log</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
     const AUTH_API = '/';
     const VIDEO_API = 'http://localhost:8002/api/videos';
 
+    // =========================================================================
+    // UTILITAIRES DE SÉCURITÉ - Protection contre les attaques XSS
+    // =========================================================================
+
+    /**
+     * Échappe les caractères HTML dangereux pour éviter les attaques XSS.
+     * Utilisé pour afficher des données provenant de l'API de manière sécurisée.
+     *
+     * @param {string} str - Chaîne à échapper
+     * @returns {string} - Chaîne sécurisée pour insertion dans le DOM
+     */
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    /**
+     * Crée une cellule de tableau avec du texte sécurisé.
+     *
+     * @param {string} content - Contenu de la cellule
+     * @returns {HTMLTableCellElement} - Élément TD sécurisé
+     */
+    function createSafeCell(content) {
+      const td = document.createElement('td');
+      td.textContent = content || '';
+      return td;
+    }
+
+    // =========================================================================
+    // UTILITAIRES DE CHIFFREMENT
+    // =========================================================================
     const cleanB64 = (v) => (v || '').replaceAll(/\s+/g, '');
-    const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.charCodeAt(0));
+    // Note: Pour la conversion binaire Base64, on utilise codePointAt (compatible Unicode)
+    const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.codePointAt(0));
 
     function setVideoContext(videoId){
       localStorage.setItem('admin_video_ctx', videoId || '');
     }
 
+    // =========================================================================
+    // GESTION DE L'AUTHENTIFICATION
+    // =========================================================================
     async function logout(){
       localStorage.removeItem('access_token');
       window.location.href = '/';
@@ -140,6 +225,9 @@
       logout();
     }
 
+    // =========================================================================
+    // STATISTIQUES
+    // =========================================================================
     function updateStats({ totalVideos = '-', signedVideos = '-', logsCount = '-' }){
       document.getElementById('statTotalVideos').textContent = totalVideos;
       document.getElementById('statSignedVideos').textContent = signedVideos;
@@ -160,13 +248,27 @@
         videos.forEach((v)=>{
           if (v.is_signed) signed += 1;
           const tr = document.createElement('tr');
-          const statusBadge = `<span class="badge bg-secondary">${v.status||''}</span>`;
-          tr.innerHTML = `<td>${v.id}</td><td>${v.sender_id||''}</td><td>${v.receiver_id||''}</td><td>${statusBadge}</td><td>${v.is_signed ? 'Oui':'Non'}</td><td>${Number.parseFloat(v.amount||0).toFixed(2)}</td><td>${v.expires_at||''}</td><td></td>`;
-          const actions = tr.querySelector('td:last-child');
+          // Création sécurisée des cellules (évite XSS)
+          tr.appendChild(createSafeCell(v.id));
+          tr.appendChild(createSafeCell(v.sender_id));
+          tr.appendChild(createSafeCell(v.receiver_id));
+          // Badge de statut créé de manière sécurisée
+          const statusTd = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = 'badge bg-secondary';
+          badge.textContent = v.status || '';
+          statusTd.appendChild(badge);
+          tr.appendChild(statusTd);
+          tr.appendChild(createSafeCell(v.is_signed ? 'Oui' : 'Non'));
+          tr.appendChild(createSafeCell(Number.parseFloat(v.amount || 0).toFixed(2)));
+          tr.appendChild(createSafeCell(v.expires_at));
+          // Cellule des actions
+          const actions = document.createElement('td');
           const selectBtn = document.createElement('button'); selectBtn.className='btn btn-sm btn-outline-primary me-1'; selectBtn.textContent='Sélectionner'; selectBtn.addEventListener('click', ()=>setVideoContext(v.id));
           const keyBtn = document.createElement('button'); keyBtn.className='btn btn-sm btn-outline-info me-1'; keyBtn.textContent='Clé'; keyBtn.addEventListener('click', ()=>{ setVideoContext(v.id); fetchEncryptedKey(v.id); });
           const dlBtn = document.createElement('button'); dlBtn.className='btn btn-sm btn-success'; dlBtn.textContent='Télécharger'; dlBtn.addEventListener('click', ()=>{ setVideoContext(v.id); downloadAndDecrypt(); });
           actions.appendChild(selectBtn); actions.appendChild(keyBtn); actions.appendChild(dlBtn);
+          tr.appendChild(actions);
           tbody.appendChild(tr);
         });
         updateStats({ totalVideos: videos.length, signedVideos: signed });
@@ -217,9 +319,43 @@
       }
     }
 
-    async function loadLogs(){
-      const tbody = document.getElementById('logsBody');
-      const empty = document.getElementById('logsEmpty');
+    // =========================================================================
+    // CHARGEMENT DES LOGS UTILISATEURS
+    // =========================================================================
+    async function loadUserLogs(){
+      const tbody = document.getElementById('userLogsBody');
+      const empty = document.getElementById('userLogsEmpty');
+      tbody.innerHTML = '';
+      const token = localStorage.getItem('access_token');
+      if(!token){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
+      try{
+        const res = await fetch('/logs', { headers: { 'Authorization': 'Bearer '+token } });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const j = await res.json();
+        const logs = j.logs || [];
+        if(!logs.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
+        empty.style.display='none';
+        logs.forEach(r=>{
+          const tr = document.createElement('tr');
+          // Création sécurisée des cellules (évite XSS)
+          tr.appendChild(createSafeCell(r.user_id));
+          tr.appendChild(createSafeCell(r.action_type));
+          tr.appendChild(createSafeCell(r.success ? 'Oui' : 'Non'));
+          tr.appendChild(createSafeCell(r.video_id));
+          tr.appendChild(createSafeCell(r.is_signed ? 'Oui' : 'Non'));
+          tr.appendChild(createSafeCell(Number.parseFloat(r.amount || 0).toFixed(2)));
+          tr.appendChild(createSafeCell(r.timestamp));
+          tbody.appendChild(tr);
+        });
+      }catch(e){ console.warn('loadUserLogs failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }
+    }
+
+    // =========================================================================
+    // CHARGEMENT DES LOGS ADMINISTRATEURS
+    // =========================================================================
+    async function loadAdminLogs(){
+      const tbody = document.getElementById('adminLogsBody');
+      const empty = document.getElementById('adminLogsEmpty');
       tbody.innerHTML = '';
       const token = localStorage.getItem('access_token');
       if(!token){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
@@ -228,28 +364,38 @@
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const j = await res.json();
         const logs = j.logs || [];
-        if(!logs.length){ empty.style.display='table-row'; tbody.appendChild(empty); updateStats({ logsCount:0 }); return; }
+        if(!logs.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
         empty.style.display='none';
         logs.forEach(r=>{
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.user_id}</td><td>${r.success? 'Oui':'Non'}</td><td>${r.action_type}</td><td>${r.timestamp||''}</td>`;
+          const dateConn = r.login_date || r.timestamp || '';
+          // Création sécurisée des cellules (évite XSS)
+          tr.appendChild(createSafeCell(dateConn));
+          tr.appendChild(createSafeCell(r.action_type));
+          tr.appendChild(createSafeCell(r.success ? 'Oui' : 'Non'));
+          tr.appendChild(createSafeCell(r.timestamp));
+          tr.appendChild(createSafeCell(r.video_id));
           tbody.appendChild(tr);
         });
-        updateStats({ logsCount: logs.length });
-      }catch(e){ console.warn('loadLogs failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }
+      }catch(e){ console.warn('loadAdminLogs failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }
     }
 
+    // =========================================================================
+    // ÉVÉNEMENTS UI
+    // =========================================================================
     function wireActions(){
       const logoutBtn = document.getElementById('logoutBtn');
       if(logoutBtn) logoutBtn.addEventListener('click', logout);
       const refreshVideosBtn = document.getElementById('refreshVideosBtn');
       if(refreshVideosBtn) refreshVideosBtn.addEventListener('click', loadVideos);
-      const refreshLogsBtn = document.getElementById('refreshLogsBtn');
-      if(refreshLogsBtn) refreshLogsBtn.addEventListener('click', loadLogs);
+      const refreshUserLogsBtn = document.getElementById('refreshUserLogsBtn');
+      if(refreshUserLogsBtn) refreshUserLogsBtn.addEventListener('click', loadUserLogs);
+      const refreshAdminLogsBtn = document.getElementById('refreshAdminLogsBtn');
+      if(refreshAdminLogsBtn) refreshAdminLogsBtn.addEventListener('click', loadAdminLogs);
       const resetVideoCtxBtn = document.getElementById('resetVideoCtxBtn');
       if(resetVideoCtxBtn) resetVideoCtxBtn.addEventListener('click', ()=>setVideoContext(''));
       const refreshAllBtn = document.getElementById('refreshAllBtn');
-      if(refreshAllBtn) refreshAllBtn.addEventListener('click', ()=>{ loadVideos(); loadLogs(); });
+      if(refreshAllBtn) refreshAllBtn.addEventListener('click', ()=>{ loadVideos(); loadUserLogs(); loadAdminLogs(); });
       const delBtn = document.getElementById('deleteAccountBtn');
       if(delBtn) delBtn.addEventListener('click', deleteAccount);
     }
@@ -257,7 +403,8 @@
     document.addEventListener('DOMContentLoaded', ()=>{
       wireActions();
       loadVideos();
-      loadLogs();
+      loadUserLogs();
+      loadAdminLogs();
     });
   </script>
 </body>

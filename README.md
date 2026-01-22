@@ -92,12 +92,14 @@ moustass_video/
 **Avant de démarrer, vous DEVEZ configurer les variables d'environnement :**
 
 ```bash
-# Générer automatiquement le fichier .env avec des mots de passe sécurisés
+# Linux / macOS
 ./generate-env.sh
 
-# OU manuellement
-cp .env.example .env
-# Puis éditer .env et changer TOUS les mots de passe
+# Windows PowerShell
+.\generate-env.ps1
+
+# Windows CMD
+generate-env.bat
 ```
 
 📖 **Voir [SECURITY_SETUP.md](./SECURITY_SETUP.md) pour plus de détails**
@@ -106,23 +108,51 @@ cp .env.example .env
 
 ### Option 1️⃣: Docker Compose (Recommandé)
 
+#### Linux / macOS
 ```bash
 # 1. Générer la configuration sécurisée
 ./generate-env.sh
 
 # 2. Démarrer tous les services
+./start-services.sh
+# ou directement:
 docker compose up -d
 
 # 3. Vérifier que tout fonctionne
 docker compose ps
-
-# ✅ Ouvrir: http://localhost:8001 (Auth + UI)
-#           http://localhost:8002 (Videos API)
-#           http://localhost:8003 (Security API)
 ```
+
+#### Windows PowerShell
+```powershell
+# 1. Générer la configuration sécurisée
+.\generate-env.ps1
+
+# 2. Démarrer tous les services
+.\start-services.ps1
+# ou directement:
+docker compose up -d
+
+# 3. Vérifier que tout fonctionne
+docker compose ps
+```
+
+#### Windows CMD
+```cmd
+REM 1. Générer la configuration
+generate-env.bat
+
+REM 2. Démarrer les services
+start-services.bat
+```
+
+**✅ URLs des services:**
+- http://localhost:8001 (Auth + UI)
+- http://localhost:8002 (Videos API)
+- http://localhost:8003 (Security API)
 
 ### Option 2️⃣: Local (Développement)
 
+#### Linux / macOS
 ```bash
 # 1. Prérequis
 python --version      # 3.11+
@@ -134,8 +164,7 @@ source .env           # Charger les variables
 
 # 3. Venv
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+source venv/bin/activate
 
 # 4. Dépendances
 pip install -r requirements.txt
@@ -146,6 +175,30 @@ mysql -u root -p$MYSQL_ROOT_PASSWORD videos_db < src/videos/init_database.sql
 
 # 6. Lancer
 cd src/videos
+python main_upload.py
+
+# ✅ Ouvrir: http://localhost:8002
+```
+
+#### Windows PowerShell
+```powershell
+# 1. Prérequis: Python 3.11+, MySQL 8.0+
+
+# 2. Configuration
+.\generate-env.ps1
+
+# 3. Venv
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# 4. Dépendances
+pip install -r requirements.txt
+
+# 5. Base de données (via MySQL Shell ou Docker)
+# Voir SECURITY_SETUP.md
+
+# 6. Lancer
+cd src\videos
 python main_upload.py
 
 # ✅ Ouvrir: http://localhost:8002
