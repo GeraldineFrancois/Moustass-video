@@ -7,6 +7,7 @@ import os
 
 from .database import SessionLocal, init_db
 from . import crud, security
+import json
 
 app = FastAPI(title="Auth Service")
 
@@ -36,13 +37,56 @@ def get_db():
         db.close()
 
 
+async def _parse_request_fields(request: Request, *fields):
+    """Support both application/json and form-data for incoming requests."""
+    content_type = (request.headers.get('content-type') or '').lower()
+    data = {}
+    # Try robust JSON parsing first when content-type suggests JSON
+    if 'application/json' in content_type:
+        try:
+            # Prefer raw body parsing to avoid some edge cases
+            raw = await request.body()
+            if raw:
+                try:
+                    data = json.loads(raw.decode('utf-8'))
+                except Exception:
+                    # tolerant fallback for curl/fish odd formatting like {key:val,key2:val2}
+                    try:
+                        txt = raw.decode('utf-8', errors='replace').strip()
+                        if txt.startswith('{') and ':' in txt:
+                            obj = {}
+                            for part in txt.strip('{}').split(','):
+                                if ':' in part:
+                                    k, v = part.split(':', 1)
+                                    obj[k.strip().strip('"\'')] = v.strip().strip('"\'')
+                            data = obj
+                        else:
+                            data = {}
+                    except Exception:
+                        data = {}
+            else:
+                data = {}
+        except Exception:
+            try:
+                data = await request.json()
+            except Exception:
+                data = {}
+    else:
+        form = await request.form()
+        data = dict(form)
+    return [data.get(f) for f in fields]
+
+
 @app.get('/health')
 def health():
     return {'status': 'healthy', 'service': 'auth-service'}
 
 
 @app.post('/signup_admin')
-async def signup_admin(request: Request, firstname: str = Form(...), lastname: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def signup_admin(request: Request, db: Session = Depends(get_db)):
+    firstname, lastname, email, password = await _parse_request_fields(request, 'firstname', 'lastname', 'email', 'password')
+    if not (firstname and lastname and email and password):
+        raise HTTPException(status_code=400, detail='Missing fields')
     existing = crud.get_user_by_email(db, email)
     if existing:
         raise HTTPException(status_code=400, detail='Email already registered')
@@ -52,7 +96,10 @@ async def signup_admin(request: Request, firstname: str = Form(...), lastname: s
 
 
 @app.post('/signup_client')
-async def signup_client(request: Request, firstname: str = Form(...), lastname: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def signup_client(request: Request, db: Session = Depends(get_db)):
+    firstname, lastname, email, password = await _parse_request_fields(request, 'firstname', 'lastname', 'email', 'password')
+    if not (firstname and lastname and email and password):
+        raise HTTPException(status_code=400, detail='Missing fields')
     existing = crud.get_user_by_email(db, email)
     if existing:
         raise HTTPException(status_code=400, detail='Email already registered')
@@ -62,7 +109,10 @@ async def signup_client(request: Request, firstname: str = Form(...), lastname: 
 
 
 @app.post('/login')
-async def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def login(request: Request, db: Session = Depends(get_db)):
+    email, password = await _parse_request_fields(request, 'email', 'password')
+    if not (email and password):
+        raise HTTPException(status_code=400, detail='Missing credentials')
     user = crud.get_user_by_email(db, email)
     if not user or not security.verify_password(password, user.password_hash):
         if user:

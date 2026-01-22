@@ -1,25 +1,193 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion | Notre Plateforme</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%); min-height:100vh; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto, sans-serif; }
+    .login-container { max-width:400px; margin-top:100px; }
+    .card { border:none; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.1); transition:transform .3s; }
+    .card:hover { transform:translateY(-5px); }
+    .form-control:focus { border-color:#4dabf7; box-shadow:0 0 0 .2rem rgba(77,171,247,.25); }
+    .btn-primary { background:linear-gradient(90deg,#4dabf7,#339af0); border:none; padding:10px; font-weight:600; }
+    .btn-success { background:linear-gradient(90deg,#40c057,#2f9e44); border:none; padding:10px; font-weight:600; }
+    .logo { width:60px; height:60px; background:linear-gradient(135deg,#4dabf7,#339af0); border-radius:12px; margin:0 auto 20px; display:flex; align-items:center; justify-content:center; color:white; font-size:24px; font-weight:bold; }
+  </style>
 </head>
 <body>
-  <h2>Connexion</h2>
-  <form id="loginForm" method="post" action="/login">
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Mot de passe: <input type="password" name="password" required></label><br>
-    <button type="submit">Se connecter</button>
-  </form>
-  <hr>
-  <h3>Créer un compte</h3>
-  <form id="signupForm" method="post" action="/signup_client">
-    <input name="firstname" placeholder="Prénom"><br>
-    <input name="lastname" placeholder="Nom"><br>
-    <input name="email" type="email" placeholder="Email"><br>
-    <input name="password" type="password" placeholder="Mot de passe"><br>
-    <button type="submit">Créer</button>
-  </form>
+  <div class="container">
+    <div class="login-container mx-auto">
+      <div class="text-center mb-4">
+        <div class="logo">MousVi</div>
+        <h2 class="fw-bold text-dark">Bienvenue</h2>
+        <p class="text-muted">Accédez à votre espace personnel</p>
+      </div>
+
+      <div class="card">
+        <div class="card-body p-4">
+          <ul class="nav nav-tabs nav-justified mb-4" id="authTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-semibold" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Connexion</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab" aria-controls="signup" aria-selected="false">Inscription</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="authTabsContent">
+            <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab" tabindex="0">
+              <form id="loginForm" novalidate>
+                <div class="mb-3">
+                  <label for="email" class="form-label fw-semibold">Email</label>
+                  <input type="email" class="form-control" id="email" name="email" placeholder="votre@email.com" required>
+                </div>
+                <div class="mb-4">
+                  <label for="password" class="form-label fw-semibold">Mot de passe</label>
+                  <input type="password" class="form-control" id="password" name="password" placeholder="Votre mot de passe" required>
+                </div>
+                <div class="d-grid mb-3">
+                  <button type="submit" id="loginBtn" class="btn btn-primary">Se connecter</button>
+                </div>
+                <div class="text-center"><a href="#" class="text-decoration-none small">Mot de passe oublié ?</a></div>
+              </form>
+            </div>
+
+            <div class="tab-pane fade" id="signup" role="tabpanel" aria-labelledby="signup-tab" tabindex="0">
+              <form id="signupForm" novalidate>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="firstname" class="form-label fw-semibold">Prénom</label>
+                    <input type="text" class="form-control" id="firstname" name="firstname" placeholder="Jean" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="lastname" class="form-label fw-semibold">Nom</label>
+                    <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Dupont" required>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="newEmail" class="form-label fw-semibold">Email</label>
+                  <input type="email" class="form-control" id="newEmail" name="email" placeholder="votre@email.com" required>
+                </div>
+                <div class="mb-4">
+                  <label for="newPassword" class="form-label fw-semibold">Mot de passe</label>
+                  <input type="password" class="form-control" id="newPassword" name="password" placeholder="Créez un mot de passe" required>
+                  <div class="form-text small">Minimum 8 caractères avec majuscule, minuscule et chiffre</div>
+                </div>
+                <div class="d-grid">
+                  <button type="submit" id="signupBtn" class="btn btn-success">Créer mon compte</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <p class="text-muted small">En vous connectant, vous acceptez nos <a href="#" class="text-decoration-none">Conditions d'utilisation</a> et notre <a href="#" class="text-decoration-none">Politique de confidentialité</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // BASE_URL si besoin (modifie si auth service sur un port différent)
+    const BASE = '';
+
+    function decodeJwt(token){
+      try {
+        const payload = token.split('.')[1];
+        return JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
+      } catch { return {}; }
+    }
+
+    async function postJson(url, data){
+      const res = await fetch(BASE + url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'same-origin'
+      });
+      const text = await res.text();
+      try { return { ok: res.ok, status: res.status, json: JSON.parse(text) }; }
+      catch { return { ok: res.ok, status: res.status, text }; }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const loginBtn = document.getElementById('loginBtn');
+      const signupBtn = document.getElementById('signupBtn');
+
+      loginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        if (!email || !password) { alert('Veuillez remplir tous les champs obligatoires'); return; }
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Connexion...';
+        try {
+          const { ok, json, text, status } = await postJson('/login', { email, password });
+          if (!ok) {
+            const msg = json?.detail || text || `Erreur ${status}`;
+            throw new Error(msg);
+          }
+          const token = json.access_token || json.token || json.accessToken;
+          if (!token) throw new Error('Jeton manquant dans la réponse');
+          localStorage.setItem('access_token', token);
+          const payload = decodeJwt(token);
+          const role = (payload.role || payload.roles || 'USER').toUpperCase();
+          window.location.href = `/ui/${role==='ADMIN' ? 'index-admin.html' : 'index-user.html'}`;
+        } catch (err) {
+          alert('Erreur de connexion: ' + String(err.message || err));
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = 'Se connecter';
+        }
+      });
+
+      signupForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const firstname = document.getElementById('firstname').value.trim();
+        const lastname = document.getElementById('lastname').value.trim();
+        const email = document.getElementById('newEmail').value.trim();
+        const password = document.getElementById('newPassword').value;
+        if (!email || !password || password.length < 8) { alert('Vérifiez les champs d\'inscription'); return; }
+        signupBtn.disabled = true;
+        signupBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Création...';
+        try {
+          const { ok, json, text, status } = await postJson('/signup_client', { firstname, lastname, email, password });
+          if (!ok) {
+            const msg = json?.detail || text || `Erreur ${status}`;
+            throw new Error(msg);
+          }
+          // si le backend renvoie token, on l'utilise
+          const token = json?.access_token || json?.token;
+          if (token) {
+            localStorage.setItem('access_token', token);
+            const payload = decodeJwt(token);
+            const role = (payload.role || 'USER').toUpperCase();
+            window.location.href = `/ui/${role==='ADMIN' ? 'index-admin.html' : 'index-user.html'}`;
+            return;
+          }
+          alert('Compte créé, veuillez vous connecter.');
+          // basculer onglet connexion
+          const loginTab = document.getElementById('login-tab'); new bootstrap.Tab(loginTab).show();
+        } catch (err) {
+          alert('Erreur inscription: ' + String(err.message || err));
+          signupBtn.disabled = false;
+          signupBtn.innerHTML = 'Créer mon compte';
+        }
+      });
+
+      // Pré-sélection onglet via param ?action=signup
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'signup') {
+        new bootstrap.Tab(document.getElementById('signup-tab')).show();
+      }
+    });
+  </script>
 </body>
 </html>
