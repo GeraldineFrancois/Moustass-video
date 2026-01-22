@@ -1,9 +1,13 @@
 [run]
-# Source for coverage measurement
-source = src
+# Source for coverage measurement - utiliser . pour avoir des chemins src/...
+source = .
+
+# Inclure uniquement src/
+include = src/*
 
 # Omit heavy modules / files that are not practical to unit-test locally
 omit =
+    main.py
     src/*/upload_service.py
     src/*/upload_api.py
     src/*/main_*.py
@@ -55,3 +59,9 @@ directory = htmlcov
 
 [xml]
 output = coverage.xml
+
+[paths]
+# Permet à SonarCloud de mapper les chemins correctement
+source =
+    src/
+    */src/
