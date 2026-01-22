@@ -4,7 +4,8 @@ from jose import jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
-PWD_CTX = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use pbkdf2_sha256 to avoid bcrypt 72-bytes limitation and bcrypt backend issues
+PWD_CTX = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 JWT_SECRET = os.getenv('JWT_SECRET', 'change-me-secure')
 JWT_ALGO = 'HS256'
 JWT_EXP_MIN = int(os.getenv('JWT_EXP_MIN', '60'))
