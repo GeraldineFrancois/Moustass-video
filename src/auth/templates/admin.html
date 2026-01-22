@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous">
     <title>Admin Dashboard</title>
   </head>
   <body class="p-4">
@@ -147,6 +148,25 @@
       </div>
 
       <script>
+        /* ═══════════════════════════════════════════════════════════════════════════
+         * SÉCURITÉ XSS - Fonctions de protection contre l'injection de code
+         * ═══════════════════════════════════════════════════════════════════════════ */
+
+        /**
+         * Crée une cellule de tableau sécurisée avec du texte échappé.
+         * Utilise textContent au lieu de innerHTML pour éviter les XSS.
+         */
+        function createSafeCell(text, className = '') {
+          const td = document.createElement('td');
+          td.textContent = text ?? '';
+          if (className) td.className = className;
+          return td;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════════
+         * AUTHENTIFICATION
+         * ═══════════════════════════════════════════════════════════════════════════ */
+
         // Logout and delete actions
         async function logoutAndRedirect(){
           localStorage.removeItem('access_token');
@@ -224,8 +244,12 @@
             const tbody = document.querySelector('#myLogs tbody');
             tbody.innerHTML = '';
             (j.logs||[]).forEach(r=>{
+              // Création sécurisée de la ligne (protection XSS)
               const tr = document.createElement('tr');
-              tr.innerHTML = `<td>${r.id}</td><td>${r.action_type}</td><td>${r.success? 'Oui':'Non'}</td><td>${r.timestamp||''}</td>`;
+              tr.appendChild(createSafeCell(r.id));
+              tr.appendChild(createSafeCell(r.action_type));
+              tr.appendChild(createSafeCell(r.success ? 'Oui' : 'Non'));
+              tr.appendChild(createSafeCell(r.timestamp || ''));
               tbody.appendChild(tr);
             });
           }catch(e){ console.warn('fetchMyLogs failed', e); }
@@ -241,8 +265,14 @@
             const tbody = document.querySelector('#allLogs tbody');
             tbody.innerHTML = '';
             (j.logs||[]).forEach(r=>{
+              // Création sécurisée de la ligne (protection XSS)
               const tr = document.createElement('tr');
-              tr.innerHTML = `<td>${r.id}</td><td>${r.user_id}</td><td>${r.role||''}</td><td>${r.action_type}</td><td>${r.success? 'Oui':'Non'}</td><td>${r.timestamp||''}</td>`;
+              tr.appendChild(createSafeCell(r.id));
+              tr.appendChild(createSafeCell(r.user_id));
+              tr.appendChild(createSafeCell(r.role || ''));
+              tr.appendChild(createSafeCell(r.action_type));
+              tr.appendChild(createSafeCell(r.success ? 'Oui' : 'Non'));
+              tr.appendChild(createSafeCell(r.timestamp || ''));
               tbody.appendChild(tr);
             });
           }catch(e){ console.warn('fetchAllLogs failed', e); }
@@ -250,7 +280,8 @@
 
         const VIDEO_API = 'http://localhost:8002/api/videos';
         const cleanB64 = (v) => (v || '').replaceAll(/\s+/g, '');
-        const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.charCodeAt(0));
+        // Note: Pour la conversion binaire Base64, codePointAt est utilisé (compatible Unicode)
+        const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.codePointAt(0));
         const pemToArrayBuffer = (pem) => {
           const clean = pem.replaceAll(/-----BEGIN [^-]+-----/g, '').replaceAll(/-----END [^-]+-----/g, '').replaceAll(/\s+/g, '');
           return b64ToBytes(clean).buffer;
@@ -278,14 +309,35 @@
             if (!videos.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
             empty.style.display='none';
             videos.forEach((v)=>{
+              // Création sécurisée de la ligne (protection XSS)
               const tr = document.createElement('tr');
-              const statusBadge = `<span class="badge bg-secondary">${v.status||''}</span>`;
-              tr.innerHTML = `<td>${v.id}</td><td>${v.sender_id||''}</td><td>${v.receiver_id||''}</td><td>${statusBadge}</td><td>${v.is_signed ? 'Oui':'Non'}</td><td>${Number.parseFloat(v.amount||0).toFixed(2)}</td><td>${v.expires_at||''}</td><td></td>`;
-              const actions = tr.querySelector('td:last-child');
+
+              // Cellules avec textContent (pas d'innerHTML avec données API)
+              tr.appendChild(createSafeCell(v.id));
+              tr.appendChild(createSafeCell(v.sender_id || ''));
+              tr.appendChild(createSafeCell(v.receiver_id || ''));
+
+              // Badge de statut
+              const statusTd = document.createElement('td');
+              const statusBadge = document.createElement('span');
+              statusBadge.className = 'badge bg-secondary';
+              statusBadge.textContent = v.status || '';
+              statusTd.appendChild(statusBadge);
+              tr.appendChild(statusTd);
+
+              // Signé
+              tr.appendChild(createSafeCell(v.is_signed ? 'Oui' : 'Non'));
+              tr.appendChild(createSafeCell(Number.parseFloat(v.amount || 0).toFixed(2)));
+              tr.appendChild(createSafeCell(v.expires_at || ''));
+
+              // Actions
+              const actions = document.createElement('td');
               const selectBtn = document.createElement('button'); selectBtn.className='btn btn-sm btn-outline-primary me-1'; selectBtn.textContent='Sélectionner'; selectBtn.addEventListener('click', ()=>setVideoContext(v.id));
               const keyBtn = document.createElement('button'); keyBtn.className='btn btn-sm btn-outline-info me-1'; keyBtn.textContent='Clé'; keyBtn.addEventListener('click', ()=>{ setVideoContext(v.id); fetchEncryptedKey(v.id); });
               const dlBtn = document.createElement('button'); dlBtn.className='btn btn-sm btn-success'; dlBtn.textContent='Télécharger'; dlBtn.addEventListener('click', ()=>{ setVideoContext(v.id); downloadAndDecrypt(); });
               actions.appendChild(selectBtn); actions.appendChild(keyBtn); actions.appendChild(dlBtn);
+              tr.appendChild(actions);
+
               tr.addEventListener('click', ()=>setVideoContext(v.id));
               tbody.appendChild(tr);
             });
@@ -337,7 +389,8 @@
           try{
             const privKey = await importRsaPrivateKey(priv);
             const decrypted = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, privKey, b64ToBytes(encKey));
-            const aesB64 = btoa(String.fromCharCode(...new Uint8Array(decrypted)));
+            // Note: Pour la conversion binaire vers Base64, les valeurs sont des octets (0-255)
+            const aesB64 = btoa(String.fromCodePoint(...new Uint8Array(decrypted)));
             const aesInput = document.getElementById('aesKeyInput');
             if (aesInput) aesInput.value = aesB64;
             if (statusEl) statusEl.textContent = 'Clé AES déchiffrée';
@@ -416,6 +469,7 @@
         <p>Interface minimale pour ce sprint.</p>
       </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 5.3.8 JS avec vérification d'intégrité -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC" crossorigin="anonymous"></script>
   </body>
 </html>

@@ -5,8 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Logs Admin</title>
 	<link rel="stylesheet" type="text/css" href="../css/index.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
@@ -102,9 +102,12 @@
 				if(!logs.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
 				empty.style.display='none';
 				logs.forEach(r=>{
+					// Création sécurisée de la ligne (protection XSS)
 					const tr = document.createElement('tr');
-					const successBadge = r.success ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-danger">Non</span>';
-					tr.innerHTML = `<td>${r.id}</td><td>${r.action_type||''}</td><td>${successBadge}</td><td class="small">${r.timestamp||''}</td>`;
+					tr.appendChild(createSafeCell(r.id));
+					tr.appendChild(createSafeCell(r.action_type || ''));
+					tr.appendChild(createBadgeCell(r.success ? 'Oui' : 'Non', r.success ? 'bg-success' : 'bg-danger'));
+					tr.appendChild(createSafeCell(r.timestamp || '', 'small'));
 					tbody.appendChild(tr);
 				});
 			}catch(e){ console.warn('loadMyLogs failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }
@@ -124,10 +127,16 @@
 				if(!logs.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
 				empty.style.display='none';
 				logs.forEach(r=>{
+					// Création sécurisée de la ligne (protection XSS)
 					const tr = document.createElement('tr');
-					const successBadge = r.success ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-danger">Non</span>';
-					const roleBadge = (r.role||'').toUpperCase().includes('ADMIN') ? '<span class="badge bg-primary">Admin</span>' : '<span class="badge bg-secondary">User</span>';
-					tr.innerHTML = `<td>${r.id}</td><td>${r.user_id||''}</td><td>${roleBadge}</td><td>${r.action_type||''}</td><td>${successBadge}</td><td class="small">${r.timestamp||''}</td>`;
+					tr.appendChild(createSafeCell(r.id));
+					tr.appendChild(createSafeCell(r.user_id || ''));
+					// Badge rôle (Admin/User)
+					const isAdmin = (r.role || '').toUpperCase().includes('ADMIN');
+					tr.appendChild(createBadgeCell(isAdmin ? 'Admin' : 'User', isAdmin ? 'bg-primary' : 'bg-secondary'));
+					tr.appendChild(createSafeCell(r.action_type || ''));
+					tr.appendChild(createBadgeCell(r.success ? 'Oui' : 'Non', r.success ? 'bg-success' : 'bg-danger'));
+					tr.appendChild(createSafeCell(r.timestamp || '', 'small'));
 					tbody.appendChild(tr);
 				});
 			}catch(e){ console.warn('loadAdminLogs failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }

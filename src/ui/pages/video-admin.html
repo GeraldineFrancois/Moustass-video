@@ -5,8 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Gestion Vidéos</title>
 	<link rel="stylesheet" type="text/css" href="../css/index.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
@@ -88,9 +88,40 @@
 	</div>
 
 	<script>
+		/* ═══════════════════════════════════════════════════════════════════════════
+		 * SÉCURITÉ XSS - Fonctions de protection contre l'injection de code
+		 * ═══════════════════════════════════════════════════════════════════════════ */
+
+		/**
+		 * Crée une cellule de tableau sécurisée avec du texte échappé.
+		 * Utilise textContent au lieu de innerHTML pour éviter les XSS.
+		 */
+		function createSafeCell(text, className = '') {
+			const td = document.createElement('td');
+			td.textContent = text ?? '';
+			if (className) td.className = className;
+			return td;
+		}
+
+		/**
+		 * Crée un badge Bootstrap sécurisé dans une cellule.
+		 */
+		function createBadgeCell(text, badgeClass) {
+			const td = document.createElement('td');
+			const badge = document.createElement('span');
+			badge.className = `badge ${badgeClass}`;
+			badge.textContent = text;
+			td.appendChild(badge);
+			return td;
+		}
+
+		/* ═══════════════════════════════════════════════════════════════════════════
+		 * CONFIGURATION
+		 * ═══════════════════════════════════════════════════════════════════════════ */
 		const VIDEO_API = 'http://localhost:8002/api/videos';
 		const cleanB64 = (v) => (v || '').replaceAll(/\s+/g, '');
-		const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.charCodeAt(0));
+		// Note: Pour la conversion binaire Base64, on utilise codePointAt (compatible Unicode)
+		const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.codePointAt(0));
 
 		async function logout(){
 			localStorage.removeItem('access_token');
@@ -108,23 +139,41 @@
 				if(!videos.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
 				empty.style.display='none';
 				videos.forEach(v=>{
+					// Création sécurisée de la ligne (protection XSS)
 					const tr = document.createElement('tr');
-					const statusBadge = `<span class="badge bg-secondary">${v.status||''}</span>`;
-					const signedBadge = v.is_signed ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-warning">Non</span>';
-					tr.innerHTML = `<td>${v.id}</td><td>${v.sender_id||''}</td><td>${v.receiver_id||''}</td><td>${statusBadge}</td><td>${signedBadge}</td><td>${Number.parseFloat(v.amount||0).toFixed(2)}</td><td class="small">${v.expires_at||''}</td><td></td>`;
-					const actions = tr.querySelector('td:last-child');
+					tr.appendChild(createSafeCell(v.id));
+					tr.appendChild(createSafeCell(v.sender_id || ''));
+					tr.appendChild(createSafeCell(v.receiver_id || ''));
+					tr.appendChild(createBadgeCell(v.status || '', 'bg-secondary'));
+					tr.appendChild(createBadgeCell(v.is_signed ? 'Oui' : 'Non', v.is_signed ? 'bg-success' : 'bg-warning'));
+					tr.appendChild(createSafeCell(Number.parseFloat(v.amount || 0).toFixed(2)));
+					tr.appendChild(createSafeCell(v.expires_at || '', 'small'));
+
+					// Colonne actions (boutons créés dynamiquement)
+					const actions = document.createElement('td');
+
+					// Bouton vérifier
 					const verifyBtn = document.createElement('button');
-					verifyBtn.className='btn btn-sm btn-outline-info me-1';
-					verifyBtn.innerHTML='<i class="fa-solid fa-shield-halved"></i>';
-					verifyBtn.title='Vérifier signature';
+					verifyBtn.className = 'btn btn-sm btn-outline-info me-1';
+					verifyBtn.title = 'Vérifier signature';
+					const verifyIcon = document.createElement('i');
+					verifyIcon.className = 'fa-solid fa-shield-halved';
+					verifyBtn.appendChild(verifyIcon);
 					verifyBtn.addEventListener('click', ()=>openVerifyModal(v.id));
+
+					// Bouton télécharger
 					const dlBtn = document.createElement('button');
-					dlBtn.className='btn btn-sm btn-success me-1';
-					dlBtn.innerHTML='<i class="fa-solid fa-download"></i>';
-					dlBtn.title='Télécharger';
+					dlBtn.className = 'btn btn-sm btn-success me-1';
+					dlBtn.title = 'Télécharger';
+					const dlIcon = document.createElement('i');
+					dlIcon.className = 'fa-solid fa-download';
+					dlBtn.appendChild(dlIcon);
 					dlBtn.addEventListener('click', ()=>downloadVideo(v.id));
+
 					actions.appendChild(verifyBtn);
 					actions.appendChild(dlBtn);
+					tr.appendChild(actions);
+
 					tbody.appendChild(tr);
 				});
 			}catch(e){ console.warn('loadVideos failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }
@@ -150,19 +199,43 @@
 					body: JSON.stringify({ public_key: publicKey })
 				});
 				const data = await res.json();
+
+				// Création sécurisée du résultat (protection XSS)
+				resultDiv.innerHTML = '';
+				const alertDiv = document.createElement('div');
+				const icon = document.createElement('i');
+
 				if(!res.ok){
-					resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fa-solid fa-circle-xmark"></i> Erreur: ${data.detail || 'Échec de la vérification'}</div>`;
+					alertDiv.className = 'alert alert-danger';
+					icon.className = 'fa-solid fa-circle-xmark';
+					alertDiv.appendChild(icon);
+					alertDiv.appendChild(document.createTextNode(' Erreur: ' + (data.detail || 'Échec de la vérification')));
 				}else{
 					const isValid = data.is_valid || data.valid;
 					if(isValid){
-						resultDiv.innerHTML = '<div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> Signature valide ! La vidéo est authentique.</div>';
+						alertDiv.className = 'alert alert-success';
+						icon.className = 'fa-solid fa-circle-check';
+						alertDiv.appendChild(icon);
+						alertDiv.appendChild(document.createTextNode(' Signature valide ! La vidéo est authentique.'));
 					}else{
-						resultDiv.innerHTML = '<div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i> Signature invalide ! La vidéo pourrait être altérée.</div>';
+						alertDiv.className = 'alert alert-warning';
+						icon.className = 'fa-solid fa-triangle-exclamation';
+						alertDiv.appendChild(icon);
+						alertDiv.appendChild(document.createTextNode(' Signature invalide ! La vidéo pourrait être altérée.'));
 					}
 				}
+				resultDiv.appendChild(alertDiv);
 				resultDiv.style.display = 'block';
 			}catch(err){
-				resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fa-solid fa-circle-xmark"></i> Erreur réseau: ${err.message}</div>`;
+				// Erreur réseau - affichage sécurisé
+				resultDiv.innerHTML = '';
+				const alertDiv = document.createElement('div');
+				alertDiv.className = 'alert alert-danger';
+				const icon = document.createElement('i');
+				icon.className = 'fa-solid fa-circle-xmark';
+				alertDiv.appendChild(icon);
+				alertDiv.appendChild(document.createTextNode(' Erreur réseau: ' + (err.message || 'Erreur inconnue')));
+				resultDiv.appendChild(alertDiv);
 				resultDiv.style.display = 'block';
 			}
 		}

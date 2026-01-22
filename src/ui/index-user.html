@@ -4,8 +4,8 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" type="text/css" href="css/index.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<title>Dashboard Utilisateur</title>
 </head>
@@ -141,6 +141,44 @@
 	</div>
 
 	<script>
+		/* ═══════════════════════════════════════════════════════════════════════════
+		 * SÉCURITÉ XSS - Fonctions de protection contre l'injection de code
+		 * Ces fonctions échappent les caractères dangereux pour éviter les attaques XSS
+		 * ═══════════════════════════════════════════════════════════════════════════ */
+
+		/**
+		 * Échappe les caractères HTML dangereux pour prévenir les attaques XSS.
+		 * Remplace < > & " ' par leurs entités HTML sécurisées.
+		 * @param {string} text - Le texte à sécuriser
+		 * @returns {string} Le texte échappé, sûr pour l'affichage HTML
+		 */
+		function escapeHtml(text) {
+			if (text === null || text === undefined) return '';
+			return String(text)
+				.replaceAll('&', '&amp;')
+				.replaceAll('<', '&lt;')
+				.replaceAll('>', '&gt;')
+				.replaceAll('"', '&quot;')
+				.replaceAll("'", '&#039;');
+		}
+
+		/**
+		 * Crée une cellule de tableau sécurisée avec du texte échappé.
+		 * Utilise textContent au lieu de innerHTML pour éviter les XSS.
+		 * @param {string} text - Le contenu texte de la cellule
+		 * @param {string} className - Classes CSS optionnelles
+		 * @returns {HTMLTableCellElement} L'élément <td> sécurisé
+		 */
+		function createSafeCell(text, className = '') {
+			const td = document.createElement('td');
+			td.textContent = text ?? '';
+			if (className) td.className = className;
+			return td;
+		}
+
+		/* ═══════════════════════════════════════════════════════════════════════════
+		 * CONFIGURATION - URLs des APIs
+		 * ═══════════════════════════════════════════════════════════════════════════ */
 		const AUTH_API = '/';
 		const VIDEO_API = 'http://localhost:8002/api/videos';
 		let currentUserPublicKey = '';
@@ -180,10 +218,24 @@
 				if(!logs.length){ logsList.innerHTML = '<li class="list-group-item text-muted text-center">Aucune activité récente</li>'; return; }
 				logsList.innerHTML = '';
 				logs.slice(0, 5).forEach(log=>{
+					// Création sécurisée de l'élément (pas d'innerHTML avec données API)
 					const li = document.createElement('li');
 					li.className = 'list-group-item d-flex justify-content-between align-items-center';
-					const icon = log.success ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>';
-					li.innerHTML = `<span>${icon} ${log.action_type || 'Action'}</span><small class="text-muted">${log.timestamp || ''}</small>`;
+
+					// Icône de statut (HTML statique, pas de données utilisateur)
+					const span = document.createElement('span');
+					const icon = document.createElement('i');
+					icon.className = log.success ? 'fa-solid fa-circle-check text-success' : 'fa-solid fa-circle-xmark text-danger';
+					span.appendChild(icon);
+					span.appendChild(document.createTextNode(' ' + escapeHtml(log.action_type || 'Action')));
+
+					// Timestamp sécurisé avec textContent
+					const small = document.createElement('small');
+					small.className = 'text-muted';
+					small.textContent = log.timestamp || '';
+
+					li.appendChild(span);
+					li.appendChild(small);
 					logsList.appendChild(li);
 				});
 			}catch(e){ console.warn('loadLogs failed', e); logsList.innerHTML = '<li class="list-group-item text-danger">Erreur de chargement</li>'; }
@@ -205,16 +257,45 @@
 				if(!myVideos.length){ empty.style.display='table-row'; tbody.appendChild(empty); return; }
 				empty.style.display='none';
 				myVideos.forEach(v=>{
+					// Création sécurisée de la ligne (protection XSS)
 					const tr = document.createElement('tr');
-					const statusBadge = `<span class="badge bg-secondary">${v.status||'Uploadée'}</span>`;
-					const signedBadge = v.is_signed ? '<span class="badge bg-success">Oui</span>' : '<span class="badge bg-warning">Non</span>';
-					tr.innerHTML = `<td>${v.id}</td><td>${v.receiver_id||'Admin'}</td><td>${statusBadge}</td><td>${signedBadge}</td><td>${Number.parseFloat(v.amount||0).toFixed(2)}</td><td class="small">${v.expires_at||''}</td><td></td>`;
-					const actions = tr.querySelector('td:last-child');
+
+					// Cellules avec données échappées via createSafeCell()
+					tr.appendChild(createSafeCell(v.id));
+					tr.appendChild(createSafeCell(v.receiver_id || 'Admin'));
+
+					// Badge de statut (HTML statique + texte échappé)
+					const statusTd = document.createElement('td');
+					const statusBadge = document.createElement('span');
+					statusBadge.className = 'badge bg-secondary';
+					statusBadge.textContent = v.status || 'Uploadée';
+					statusTd.appendChild(statusBadge);
+					tr.appendChild(statusTd);
+
+					// Badge signé (HTML statique)
+					const signedTd = document.createElement('td');
+					const signedBadge = document.createElement('span');
+					signedBadge.className = v.is_signed ? 'badge bg-success' : 'badge bg-warning';
+					signedBadge.textContent = v.is_signed ? 'Oui' : 'Non';
+					signedTd.appendChild(signedBadge);
+					tr.appendChild(signedTd);
+
+					// Montant et date avec textContent
+					tr.appendChild(createSafeCell(Number.parseFloat(v.amount || 0).toFixed(2)));
+					tr.appendChild(createSafeCell(v.expires_at || '', 'small'));
+
+					// Colonne actions
+					const actions = document.createElement('td');
 					const verifyBtn = document.createElement('button');
-					verifyBtn.className='btn btn-sm btn-outline-primary';
-					verifyBtn.innerHTML='<i class="fa-solid fa-shield-halved"></i> Vérifier';
+					verifyBtn.className = 'btn btn-sm btn-outline-primary';
+					const verifyIcon = document.createElement('i');
+					verifyIcon.className = 'fa-solid fa-shield-halved';
+					verifyBtn.appendChild(verifyIcon);
+					verifyBtn.appendChild(document.createTextNode(' Vérifier'));
 					verifyBtn.addEventListener('click', ()=>openVerifyModal(v.id));
 					actions.appendChild(verifyBtn);
+					tr.appendChild(actions);
+
 					tbody.appendChild(tr);
 				});
 			}catch(e){ console.warn('loadVideos failed', e); empty.style.display='table-row'; tbody.appendChild(empty); }
@@ -240,19 +321,43 @@
 					body: JSON.stringify({ public_key: publicKey })
 				});
 				const data = await res.json();
+
+				// Création sécurisée du résultat (protection XSS)
+				resultDiv.innerHTML = '';
+				const alertDiv = document.createElement('div');
+				const icon = document.createElement('i');
+
 				if(!res.ok){
-					resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fa-solid fa-circle-xmark"></i> Erreur: ${data.detail || 'Échec de la vérification'}</div>`;
+					alertDiv.className = 'alert alert-danger';
+					icon.className = 'fa-solid fa-circle-xmark';
+					alertDiv.appendChild(icon);
+					alertDiv.appendChild(document.createTextNode(' Erreur: ' + (data.detail || 'Échec de la vérification')));
 				}else{
 					const isValid = data.is_valid || data.valid;
 					if(isValid){
-						resultDiv.innerHTML = '<div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> ✅ Signature valide ! La vidéo est authentique et signée par vous.</div>';
+						alertDiv.className = 'alert alert-success';
+						icon.className = 'fa-solid fa-circle-check';
+						alertDiv.appendChild(icon);
+						alertDiv.appendChild(document.createTextNode(' ✅ Signature valide ! La vidéo est authentique et signée par vous.'));
 					}else{
-						resultDiv.innerHTML = '<div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i> ⚠️ Signature invalide ! La vidéo pourrait être altérée.</div>';
+						alertDiv.className = 'alert alert-warning';
+						icon.className = 'fa-solid fa-triangle-exclamation';
+						alertDiv.appendChild(icon);
+						alertDiv.appendChild(document.createTextNode(' ⚠️ Signature invalide ! La vidéo pourrait être altérée.'));
 					}
 				}
+				resultDiv.appendChild(alertDiv);
 				resultDiv.style.display = 'block';
 			}catch(err){
-				resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fa-solid fa-circle-xmark"></i> Erreur réseau: ${err.message}</div>`;
+				// Erreur réseau - affichage sécurisé
+				resultDiv.innerHTML = '';
+				const alertDiv = document.createElement('div');
+				alertDiv.className = 'alert alert-danger';
+				const icon = document.createElement('i');
+				icon.className = 'fa-solid fa-circle-xmark';
+				alertDiv.appendChild(icon);
+				alertDiv.appendChild(document.createTextNode(' Erreur réseau: ' + (err.message || 'Erreur inconnue')));
+				resultDiv.appendChild(alertDiv);
 				resultDiv.style.display = 'block';
 			}
 		}

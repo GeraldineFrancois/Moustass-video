@@ -20,20 +20,21 @@ omit =
     tests/*
 
 # Exclure les modules lourds ou non testés pour concentrer la mesure sur les
-# fonctions unitaires testées (sécurité, storage_manager, etc.).
+# fonctions unitaires testées (sécurité, storage_manager, crypto, schemas, etc.).
     src/auth/auth_api.py
     src/auth/auth_service.py
     src/auth/crud.py
     src/auth/kms.py
     src/auth/models.py
-    src/auth/schemas.py
-    src/security/*
     src/videos/expiration_engine.py
     src/videos/metadata_mapper.py
     src/videos/security.py
     src/videos/upload_api.py
     src/videos/upload_service.py
     src/videos/test_upload_service.py
+    src/videos/database_old.py
+    src/security/client.py
+    src/security/jwt_validator.py
 
 [report]
 exclude_lines =
