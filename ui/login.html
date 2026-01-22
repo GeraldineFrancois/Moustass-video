@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Login</title>
+</head>
+<body>
+  <h2>Connexion</h2>
+  <form id="loginForm" method="post" action="/login">
+    <label>Email: <input type="email" name="email" required></label><br>
+    <label>Mot de passe: <input type="password" name="password" required></label><br>
+    <button type="submit">Se connecter</button>
+  </form>
+  <hr>
+  <h3>Créer un compte</h3>
+  <form id="signupForm" method="post" action="/signup_client">
+    <input name="firstname" placeholder="Prénom"><br>
+    <input name="lastname" placeholder="Nom"><br>
+    <input name="email" type="email" placeholder="Email"><br>
+    <input name="password" type="password" placeholder="Mot de passe"><br>
+    <button type="submit">Créer</button>
+  </form>
+</body>
+</html>
