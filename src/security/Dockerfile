@@ -6,15 +6,16 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apk add --no-cache \
-    gcc \
-    g++ \
-    musl-dev \
-    openssl-dev \
     curl \
-    git
+    dos2unix \
+    g++ \
+    gcc \
+    git \
+    musl-dev \
+    openssl-dev
 
-# Install Snyk CLI
-RUN curl -Lo /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-linux && \
+# Install Snyk CLI (Alpine Linux)
+RUN curl -Lo /usr/local/bin/snyk https://static.snyk.io/cli/latest/snyk-alpine && \
     chmod +x /usr/local/bin/snyk
 
 # Créer un utilisateur non-root pour la sécurité
@@ -25,8 +26,8 @@ COPY requirements.txt .
 COPY requirements-dev.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements-dev.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-dev.txt
 
 # Copy source code avec permissions correctes
 COPY src/ /app/src/

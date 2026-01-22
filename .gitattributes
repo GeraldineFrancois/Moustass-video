@@ -1,0 +1,45 @@
+# Forcer les fins de ligne LF pour tous les fichiers texte (compatibilité cross-platform)
+* text=auto eol=lf
+
+# Scripts shell - toujours LF
+*.sh text eol=lf
+
+# Dockerfiles - toujours LF
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# SQL - toujours LF
+*.sql text eol=lf
+
+# Python - toujours LF
+*.py text eol=lf
+
+# YAML/YML - toujours LF
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# JSON - toujours LF
+*.json text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# HTML/CSS/JS
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+# Windows scripts - CRLF
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaires - pas de conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.webm binary
+*.pdf binary

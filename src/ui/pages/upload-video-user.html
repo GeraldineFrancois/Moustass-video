@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enregistrer une vidéo de confirmation</title>
-    <link rel="stylesheet" type="text/css" href="../css/index.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC"></script>
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+    <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Font Awesome 7.0.1 avec vérification d'intégrité -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Bootstrap 5.3.8 JS avec vérification d'intégrité -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         #videoPreview {
             width: 100%;
@@ -76,7 +79,7 @@
                     <div class="card-body">
                         <div class="alert alert-info">
                             <i class="fa-solid fa-circle-info"></i>
-                            <strong>Instructions:</strong> Cliquez sur "Démarrer l'enregistrement" pour activer votre webcam. 
+                            <strong>Instructions:</strong> Cliquez sur "Démarrer l'enregistrement" pour activer votre webcam.
                             L'enregistrement durera automatiquement 5 secondes, puis votre vidéo sera envoyée avec les informations saisies ci-dessous.
                         </div>
 
@@ -96,11 +99,11 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="recipientEmail" class="form-label"><i class="fa-solid fa-user"></i> Destinataire</label>
-                                    <input class="form-control" type="text" id="recipientEmail" value="Admin" readonly />
+                                    <input class="form-control" type="text" id="recipientEmail" value="Admin" readonly>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="amount" class="form-label"><i class="fa-solid fa-coins"></i> Montant (RS)</label>
-                                    <input class="form-control" type="number" id="amount" value="850" required />
+                                    <input class="form-control" type="number" id="amount" value="850" required>
                                 </div>
                             </div>
 
@@ -112,7 +115,7 @@
 
                             <div class="mb-3">
                                 <label for="ivAES" class="form-label"><i class="fa-solid fa-hashtag"></i> IV AES-GCM (généré automatiquement)</label>
-                                <input type="text" id="ivAES" class="form-control" readonly placeholder="Sera généré automatiquement avant l'enregistrement" />
+                                <input type="text" id="ivAES" class="form-control" readonly placeholder="Sera généré automatiquement avant l'enregistrement">
                             </div>
 
                             <!-- Boutons d'action -->
@@ -152,13 +155,14 @@
 
         function pemToArrayBuffer(pem) {
             const b64 = pem
-                .replace(/-----BEGIN PUBLIC KEY-----/, '')
-                .replace(/-----END PUBLIC KEY-----/, '')
-                .replace(/\s/g, '');
+                .replaceAll('-----BEGIN PUBLIC KEY-----', '')
+                .replaceAll('-----END PUBLIC KEY-----', '')
+                .replaceAll(/\s/g, '');
             const binary = atob(b64);
             const bytes = new Uint8Array(binary.length);
+            // Note: Pour la conversion binaire, on utilise codePointAt (compatible Unicode)
             for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
+                bytes[i] = binary.codePointAt(i);
             }
             return bytes.buffer;
         }
@@ -167,7 +171,8 @@
             try {
                 // Générer IV aléatoire (12 bytes)
                 generatedIV = crypto.getRandomValues(new Uint8Array(12));
-                const ivBase64 = btoa(String.fromCharCode(...generatedIV));
+                // Note: Pour la conversion binaire vers Base64, on utilise fromCodePoint
+                const ivBase64 = btoa(String.fromCodePoint(...generatedIV));
                 document.getElementById('ivAES').value = ivBase64;
 
                 // Générer clé AES-256 aléatoire
@@ -183,16 +188,16 @@
                 // Récupérer la clé publique RSA de l'admin
                 console.log('Fetching admin public key from:', `${SECURITY_API}/keys/admin-public`);
                 const response = await fetch(`${SECURITY_API}/keys/admin-public`);
-                
+
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Server response:', response.status, errorText);
                     throw new Error(`Impossible de récupérer la clé publique admin (HTTP ${response.status}): ${errorText}`);
                 }
-                
+
                 const data = await response.json();
                 const { public_key_pem } = data;
-                
+
                 if (!public_key_pem) {
                     throw new Error('Clé publique manquante dans la réponse du serveur');
                 }
@@ -213,8 +218,9 @@
                     generatedAESKey
                 );
 
+                // Note: Pour la conversion binaire vers Base64, on utilise fromCodePoint
                 const encryptedKeyBase64 = btoa(
-                    String.fromCharCode(...new Uint8Array(encryptedKeyBuffer))
+                    String.fromCodePoint(...new Uint8Array(encryptedKeyBuffer))
                 );
                 document.getElementById('encryptedKey').value = encryptedKeyBase64;
 
@@ -229,9 +235,9 @@
 
         async function initWebcam() {
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 640, height: 480 }, 
-                    audio: true 
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: true
                 });
                 document.getElementById('videoPreview').srcObject = mediaStream;
                 return true;
@@ -276,8 +282,8 @@
             showCountdown(3, () => {
                 // Démarrer l\'enregistrement
                 recordedChunks = [];
-                mediaRecorder = new MediaRecorder(mediaStream, { 
-                    mimeType: 'video/webm;codecs=vp9' 
+                mediaRecorder = new MediaRecorder(mediaStream, {
+                    mimeType: 'video/webm;codecs=vp9'
                 });
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -353,24 +359,37 @@
                 }
 
                 const result = await response.json();
-                showStatus('success', `✅ Vidéo envoyée avec succès ! ID: ${result.video_id || result.id}`);
-                
+                showStatus('success', `✅ Vidéo envoyée avec succès ! ID: ${escapeHtml(result.video_id || result.id)}`);
+
                 // Réinitialiser après succès
                 setTimeout(() => {
-                    window.location.href = '../index-user.html';
+                    globalThis.location.href = '../index-user.html';
                 }, 2000);
 
             } catch (error) {
                 console.error('Erreur upload:', error);
                 const errorMessage = error.message || String(error);
-                showStatus('danger', `❌ Erreur upload: ${errorMessage}`);
+                showStatus('danger', `❌ Erreur upload: ${escapeHtml(errorMessage)}`);
                 document.getElementById('startRecordingBtn').disabled = false;
             }
         }
 
+        /**
+         * Échappe les caractères HTML dangereux pour prévenir les attaques XSS.
+         */
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            return String(text)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
         function showStatus(type, message) {
             const statusDiv = document.getElementById('statusDiv');
-            statusDiv.className = `alert alert-${type}`;
+            statusDiv.className = `alert alert-${escapeHtml(type)}`;
             statusDiv.innerHTML = message;
             statusDiv.style.display = 'block';
         }
