@@ -1,0 +1,15 @@
+# Ignorer les dépendances système installées dans venv
+venv/
+.venv/
+env/
+
+# Ignorer les chemins de cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+
+# Ignorer les dossiers de build
+build/
+dist/
+*.egg-info/
