@@ -155,6 +155,60 @@
     </div>
   </div>
 
+  <!-- Modal Lecteur Vidéo -->
+  <div class="modal fade" id="videoPlayerModal" tabindex="-1" aria-labelledby="videoPlayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="videoPlayerModalLabel"><i class="fa-solid fa-play-circle"></i> Lecture Vidéo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <strong>ℹ️ Info :</strong> La vidéo est automatiquement déchiffrée pour la lecture.
+          </div>
+          <div id="videoPlayerContainer" class="text-center">
+            <video id="videoPlayer" controls style="max-width: 100%; height: auto;">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          </div>
+          <div id="videoPlayerResult" class="mt-3" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Vérification Signature -->
+  <div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="verifyModalLabel"><i class="fa-solid fa-shield-halved"></i> Vérification de la Signature</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="verifyVideoId" class="form-label">ID Vidéo</label>
+            <input type="text" class="form-control" id="verifyVideoId" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="verifyPublicKey" class="form-label">Clé publique de l'utilisateur</label>
+            <textarea class="form-control" id="verifyPublicKey" rows="6" placeholder="Collez la clé publique RSA de l'utilisateur..."></textarea>
+            <small class="text-muted">Cette clé sera utilisée pour vérifier l'authenticité de la vidéo</small>
+          </div>
+          <button class="btn btn-primary" id="confirmVerifyBtn"><i class="fa-solid fa-check-circle"></i> Vérifier la signature</button>
+          <div id="verifyResult" class="mt-3" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================================================================
     // CONFIGURATION
@@ -198,6 +252,68 @@
     const cleanB64 = (v) => (v || '').replaceAll(/\s+/g, '');
     // Note: Pour la conversion binaire Base64, on utilise codePointAt (compatible Unicode)
     const b64ToBytes = (b64) => Uint8Array.from(atob(cleanB64(b64)), (c) => c.codePointAt(0));
+
+    /**
+     * Déchiffre une clé AES avec la clé privée RSA de l'admin
+     * @param {string} encryptedKeyB64 - Clé AES chiffrée en base64
+     * @param {string} privateKeyPem - Clé privée RSA au format PEM
+     * @returns {Promise<Uint8Array>} - Clé AES déchiffrée
+     */
+    async function decryptAesKeyWithRSA(encryptedKeyB64, privateKeyPem){
+      if(!privateKeyPem || !encryptedKeyB64){
+        throw new Error('Clé privée RSA ou clé chiffrée manquante');
+      }
+      
+      // Importer la clé privée RSA
+      const pemBody = privateKeyPem
+        .replace(/-----BEGIN PRIVATE KEY-----/, '')
+        .replace(/-----END PRIVATE KEY-----/, '')
+        .replaceAll(/\s+/g, '');
+      const binaryKey = b64ToBytes(pemBody);
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'pkcs8',
+        binaryKey,
+        { name: 'RSA-OAEP', hash: 'SHA-256' },
+        false,
+        ['decrypt']
+      );
+      
+      // Déchiffrer la clé AES
+      const encryptedKeyBytes = b64ToBytes(encryptedKeyB64);
+      const decryptedKey = await crypto.subtle.decrypt(
+        { name: 'RSA-OAEP' },
+        cryptoKey,
+        encryptedKeyBytes
+      );
+      
+      return new Uint8Array(decryptedKey);
+    }
+
+    /**
+     * Déchiffre un contenu vidéo avec AES-GCM
+     * @param {ArrayBuffer} encryptedContent - Contenu chiffré
+     * @param {Uint8Array} aesKey - Clé AES
+     * @param {Uint8Array} iv - Vecteur d'initialisation
+     * @returns {Promise<ArrayBuffer>} - Contenu déchiffré
+     */
+    async function decryptVideoContent(encryptedContent, aesKey, iv){
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        aesKey,
+        { name: 'AES-GCM' },
+        false,
+        ['decrypt']
+      );
+      
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        cryptoKey,
+        encryptedContent
+      );
+      
+      return decrypted;
+    }
 
     function setVideoContext(videoId){
       localStorage.setItem('admin_video_ctx', videoId || '');
@@ -264,10 +380,41 @@
           tr.appendChild(createSafeCell(v.expires_at));
           // Cellule des actions
           const actions = document.createElement('td');
-          const selectBtn = document.createElement('button'); selectBtn.className='btn btn-sm btn-outline-primary me-1'; selectBtn.textContent='Sélectionner'; selectBtn.addEventListener('click', ()=>setVideoContext(v.id));
-          const keyBtn = document.createElement('button'); keyBtn.className='btn btn-sm btn-outline-info me-1'; keyBtn.textContent='Clé'; keyBtn.addEventListener('click', ()=>{ setVideoContext(v.id); fetchEncryptedKey(v.id); });
-          const dlBtn = document.createElement('button'); dlBtn.className='btn btn-sm btn-success'; dlBtn.textContent='Télécharger'; dlBtn.addEventListener('click', ()=>{ setVideoContext(v.id); downloadAndDecrypt(); });
-          actions.appendChild(selectBtn); actions.appendChild(keyBtn); actions.appendChild(dlBtn);
+          
+          // Bouton Voir (toujours actif)
+          const viewBtn = document.createElement('button');
+          viewBtn.className='btn btn-sm btn-outline-info me-1';
+          const viewIcon = document.createElement('i');
+          viewIcon.className = 'fa-solid fa-eye';
+          viewBtn.appendChild(viewIcon);
+          viewBtn.appendChild(document.createTextNode(' Voir'));
+          viewBtn.addEventListener('click', ()=>viewVideo(v.id, v.encrypted_key, v.iv));
+          actions.appendChild(viewBtn);
+          
+          // Bouton Télécharger (désactivé si non signée)
+          const dlBtn = document.createElement('button');
+          dlBtn.className='btn btn-sm btn-success me-1';
+          dlBtn.disabled = !v.is_signed;
+          const dlIcon = document.createElement('i');
+          dlIcon.className = 'fa-solid fa-download';
+          dlBtn.appendChild(dlIcon);
+          dlBtn.appendChild(document.createTextNode(' Télécharger'));
+          dlBtn.title = v.is_signed ? 'Télécharger la vidéo déchiffrée' : 'Vidéo non signée - téléchargement désactivé';
+          dlBtn.addEventListener('click', ()=>downloadVideo(v.id, v.encrypted_key, v.iv));
+          actions.appendChild(dlBtn);
+          
+          // Bouton Vérifier (seulement si signée)
+          if(v.is_signed){
+            const verifyBtn = document.createElement('button');
+            verifyBtn.className='btn btn-sm btn-outline-primary';
+            const verifyIcon = document.createElement('i');
+            verifyIcon.className = 'fa-solid fa-shield-halved';
+            verifyBtn.appendChild(verifyIcon);
+            verifyBtn.appendChild(document.createTextNode(' Vérifier'));
+            verifyBtn.addEventListener('click', ()=>openVerifyModal(v.id));
+            actions.appendChild(verifyBtn);
+          }
+          
           tr.appendChild(actions);
           tbody.appendChild(tr);
         });
@@ -290,6 +437,112 @@
         if (data.encrypted_key){ localStorage.setItem('admin_encrypted_key', data.encrypted_key); }
       }catch(err){
         alert('Erreur récupération clé: ' + (err?.message || err));
+      }
+    }
+
+    /**
+     * Affiche la vidéo dans un modal après déchiffrement
+     * @param {string} videoId - ID de la vidéo
+     * @param {string} encryptedKey - Clé AES chiffrée (base64)
+     * @param {string} iv - Vecteur d'initialisation (base64)
+     */
+    async function viewVideo(videoId, encryptedKey, iv){
+      const resultDiv = document.getElementById('videoPlayerResult');
+      const videoPlayer = document.getElementById('videoPlayer');
+      
+      try{
+        resultDiv.style.display = 'none';
+        videoPlayer.src = '';
+        
+        // Demander la clé privée RSA de l'admin
+        const privateKey = prompt('Collez votre clé privée RSA (admin):\n(celle générée lors de votre inscription)');
+        if(!privateKey || !privateKey.includes('BEGIN PRIVATE KEY')){
+          throw new Error('Clé privée RSA invalide ou annulée');
+        }
+        
+        // Télécharger la vidéo chiffrée
+        const resp = await fetch(`${VIDEO_API}/${videoId}/download`);
+        if(!resp.ok) throw new Error('Erreur téléchargement: ' + await resp.text());
+        const encryptedBlob = await resp.blob();
+        
+        // Déchiffrer la clé AES avec la clé privée RSA
+        const aesKey = await decryptAesKeyWithRSA(encryptedKey, privateKey);
+        const ivBytes = b64ToBytes(iv);
+        
+        // Déchiffrer le contenu vidéo
+        const encryptedContent = await encryptedBlob.arrayBuffer();
+        const decryptedContent = await decryptVideoContent(encryptedContent, aesKey, ivBytes);
+        
+        // Créer un blob URL et l'afficher
+        const decryptedBlob = new Blob([decryptedContent], { type: 'video/mp4' });
+        const blobUrl = URL.createObjectURL(decryptedBlob);
+        
+        videoPlayer.src = blobUrl;
+        videoPlayer.load();
+        
+        // Ouvrir le modal
+        const modal = new bootstrap.Modal(document.getElementById('videoPlayerModal'));
+        modal.show();
+        
+        // Nettoyer l'URL après fermeture
+        document.getElementById('videoPlayerModal').addEventListener('hidden.bs.modal', ()=>{
+          URL.revokeObjectURL(blobUrl);
+          videoPlayer.src = '';
+        }, { once: true });
+        
+      }catch(err){
+        resultDiv.innerHTML = '';
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-circle-xmark';
+        alertDiv.appendChild(icon);
+        alertDiv.appendChild(document.createTextNode(' Erreur: ' + (err.message || 'Échec du déchiffrement')));
+        resultDiv.appendChild(alertDiv);
+        resultDiv.style.display = 'block';
+      }
+    }
+
+    /**
+     * Télécharge la vidéo déchiffrée (version claire)
+     * @param {string} videoId - ID de la vidéo
+     * @param {string} encryptedKey - Clé AES chiffrée (base64)
+     * @param {string} iv - Vecteur d'initialisation (base64)
+     */
+    async function downloadVideo(videoId, encryptedKey, iv){
+      try{
+        // Demander la clé privée RSA de l'admin
+        const privateKey = prompt('Collez votre clé privée RSA (admin):\n(celle générée lors de votre inscription)');
+        if(!privateKey || !privateKey.includes('BEGIN PRIVATE KEY')){
+          throw new Error('Clé privée RSA invalide ou annulée');
+        }
+        
+        // Télécharger la vidéo chiffrée
+        const resp = await fetch(`${VIDEO_API}/${videoId}/download`);
+        if(!resp.ok) throw new Error('Erreur téléchargement: ' + await resp.text());
+        const encryptedBlob = await resp.blob();
+        
+        // Déchiffrer la clé AES avec la clé privée RSA
+        const aesKey = await decryptAesKeyWithRSA(encryptedKey, privateKey);
+        const ivBytes = b64ToBytes(iv);
+        
+        // Déchiffrer le contenu vidéo
+        const encryptedContent = await encryptedBlob.arrayBuffer();
+        const decryptedContent = await decryptVideoContent(encryptedContent, aesKey, ivBytes);
+        
+        // Créer un blob et déclencher le téléchargement
+        const decryptedBlob = new Blob([decryptedContent], { type: 'video/mp4' });
+        const url = URL.createObjectURL(decryptedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${videoId}_decrypted.mp4`;
+        a.click();
+        
+        setTimeout(()=>URL.revokeObjectURL(url), 1500);
+        alert('✅ Vidéo déchiffrée et téléchargée avec succès!');
+        
+      }catch(err){
+        alert('❌ Erreur téléchargement/déchiffrement: ' + (err.message || err));
       }
     }
 
@@ -383,6 +636,74 @@
     // =========================================================================
     // ÉVÉNEMENTS UI
     // =========================================================================
+    function openVerifyModal(videoId){
+      document.getElementById('verifyVideoId').value = videoId;
+      document.getElementById('verifyPublicKey').value = '';
+      document.getElementById('verifyResult').style.display = 'none';
+      const modal = new bootstrap.Modal(document.getElementById('verifyModal'));
+      modal.show();
+    }
+
+    async function verifySignature(){
+      const videoId = document.getElementById('verifyVideoId').value.trim();
+      const publicKey = document.getElementById('verifyPublicKey').value.trim();
+      const resultDiv = document.getElementById('verifyResult');
+      
+      if(!videoId){ alert('ID vidéo manquant'); return; }
+      if(!publicKey){ alert('Clé publique manquante'); return; }
+      
+      try{
+        // Créer FormData pour envoyer la clé publique
+        const form = new FormData();
+        form.append('public_key_pem', publicKey);
+        
+        const res = await fetch(`${VIDEO_API}/${videoId}/verify-signature`, {
+          method: 'POST',
+          body: form
+        });
+        
+        const data = await res.json();
+
+        // Création sécurisée du résultat (protection XSS)
+        resultDiv.innerHTML = '';
+        const alertDiv = document.createElement('div');
+        const icon = document.createElement('i');
+
+        if(!res.ok){
+          alertDiv.className = 'alert alert-danger';
+          icon.className = 'fa-solid fa-circle-xmark';
+          alertDiv.appendChild(icon);
+          alertDiv.appendChild(document.createTextNode(' ❌ Erreur: ' + (data.detail || 'Échec de la vérification')));
+        }else{
+          const isValid = data.is_valid;
+          if(isValid){
+            alertDiv.className = 'alert alert-success';
+            icon.className = 'fa-solid fa-circle-check';
+            alertDiv.appendChild(icon);
+            alertDiv.appendChild(document.createTextNode(' ✅ Signature valide ! La vidéo est authentique.'));
+          }else{
+            alertDiv.className = 'alert alert-warning';
+            icon.className = 'fa-solid fa-triangle-exclamation';
+            alertDiv.appendChild(icon);
+            alertDiv.appendChild(document.createTextNode(' ⚠️ Signature invalide ! La vidéo pourrait être altérée ou n\'a pas été signée avec cette clé.'));
+          }
+        }
+        resultDiv.appendChild(alertDiv);
+        resultDiv.style.display = 'block';
+      }catch(err){
+        // Erreur réseau - affichage sécurisé
+        resultDiv.innerHTML = '';
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-circle-xmark';
+        alertDiv.appendChild(icon);
+        alertDiv.appendChild(document.createTextNode(' ❌ Erreur réseau: ' + (err.message || 'Erreur inconnue')));
+        resultDiv.appendChild(alertDiv);
+        resultDiv.style.display = 'block';
+      }
+    }
+
     function wireActions(){
       const logoutBtn = document.getElementById('logoutBtn');
       if(logoutBtn) logoutBtn.addEventListener('click', logout);
@@ -398,6 +719,8 @@
       if(refreshAllBtn) refreshAllBtn.addEventListener('click', ()=>{ loadVideos(); loadUserLogs(); loadAdminLogs(); });
       const delBtn = document.getElementById('deleteAccountBtn');
       if(delBtn) delBtn.addEventListener('click', deleteAccount);
+      const confirmVerifyBtn = document.getElementById('confirmVerifyBtn');
+      if(confirmVerifyBtn) confirmVerifyBtn.addEventListener('click', verifySignature);
     }
 
     document.addEventListener('DOMContentLoaded', ()=>{
