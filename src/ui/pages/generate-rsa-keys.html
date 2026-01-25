@@ -208,7 +208,15 @@ ${generatedPrivateKey}
 
         function showStatus(type, message) {
             const area = document.getElementById('statusArea');
-            area.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
+            // Créer les éléments DOM de manière sécurisée pour éviter XSS
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.textContent = message;
+            
+            area.innerHTML = '';
+            area.appendChild(alertDiv);
+            
             setTimeout(() => {
                 if (type !== 'success' && type !== 'danger') {
                     area.innerHTML = '';

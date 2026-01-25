@@ -551,7 +551,7 @@ USER_PUBLIC_KEY=${userPublicKey}`;
         function showStatus(type, message) {
             const statusDiv = document.getElementById('statusDiv');
             statusDiv.className = `alert alert-${escapeHtml(type)}`;
-            statusDiv.innerHTML = message;
+            statusDiv.textContent = message;
             statusDiv.style.display = 'block';
         }
 
