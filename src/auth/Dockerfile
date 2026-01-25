@@ -13,8 +13,9 @@ RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 # Copier les requirements
 COPY requirements.txt .
 
-# Installer les dépendances
-RUN pip install --no-cache-dir -r requirements.txt
+# Mettre à jour pip et installer les dépendances
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copier tout le code avec permissions correctes
 COPY . .
