@@ -1,526 +1,455 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Moustass · Upload Vidéo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous">
-  <!-- Font Awesome 7.0.1 avec vérification d'intégrité -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" integrity="sha384-XuLA4HbJ7VjouBD8Bm/t7EoCTEoH6pCZQ+K6G5sUqLK5DRZbn7nL7TLbqMKqv5WN" crossorigin="anonymous">
-  <style>
-    body { background: linear-gradient(135deg, #0f172a, #1f2937); }
-    .page { max-width: 1100px; margin: 24px auto; }
-    .card { border-radius: 12px; }
-    .header-title { color: #e5e7eb; }
-    .header-sub { color: #9ca3af; }
-    .badge-status { font-weight: 600; }
-    .token-chip { font-family: monospace; font-size: 12px; color: #d1d5db; }
-    .small-muted { color:#9ca3af; }
-    .table thead th { font-size: 13px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enregistrer une vidéo de confirmation</title>
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+    <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Font Awesome 7.0.1 avec vérification d'intégrité -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Bootstrap 5.3.8 JS avec vérification d'intégrité -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        #videoPreview {
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            background-color: #000;
+            border-radius: 8px;
+        }
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+        .video-container {
+            position: relative;
+            display: inline-block;
+        }
+        .recording-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: #000000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1001;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
 </head>
-
 <body>
-  <div class="page container">
-    <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <div>
-        <h2 class="header-title mb-1"><i class="fa-solid fa-film me-2"></i>Moustass Video Service</h2>
-        <div class="header-sub">Upload, signature RSA, liste et téléchargements</div>
-      </div>
-      <div>
-        <a class="btn btn-outline-light btn-sm" href="http://localhost:8001/services" target="_blank" rel="noopener noreferrer">
-          <i class="fa-solid fa-compass me-1"></i> Portail Services
-        </a>
-      </div>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fa-solid fa-video"></i> Moustass Video</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="../index-user.html"><i class="fa-solid fa-house"></i> Accueil</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="./upload-video-user.html"><i class="fa-solid fa-video"></i> Enregistrer</a></li>
+                    <li class="nav-item"><button class="btn btn-link nav-link" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</button></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0"><i class="fa-solid fa-camera"></i> Enregistrer une Vidéo de Confirmation</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <strong>Instructions:</strong> Cliquez sur "Démarrer l'enregistrement" pour activer votre webcam.
+                            L'enregistrement durera automatiquement 5 secondes, puis votre vidéo sera envoyée avec les informations saisies ci-dessous.
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <strong>⚠️ Important - Sécurité:</strong> Un fichier texte contenant vos clés de déchiffrement sera téléchargé automatiquement après l'upload.
+                            <br><strong>Gardez ce fichier en sécurité — il contient les clés nécessaires pour déchiffrer votre vidéo.</strong>
+                            <br>Ne le partagez qu'avec des personnes de confiance.
+                        </div>
+
+                        <!-- Aperçu vidéo -->
+                        <div class="text-center mb-4">
+                            <div class="video-container">
+                                <video id="videoPreview" autoplay muted></video>
+                                <div id="countdown" class="countdown" style="display:none"></div>
+                                <div id="recordingIndicator" class="recording-indicator" style="display:none">
+                                    <i class="fa-solid fa-circle"></i> REC
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulaire -->
+                        <form id="uploadForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="recipientEmail" class="form-label"><i class="fa-solid fa-user"></i> Destinataire</label>
+                                    <input class="form-control" type="text" id="recipientEmail" value="Admin" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="amount" class="form-label"><i class="fa-solid fa-coins"></i> Montant (RS)</label>
+                                    <input class="form-control" type="number" id="amount" value="850" required>
+                                </div>
+                            </div>
+
+                            <!-- Clés de chiffrement (générées automatiquement) -->
+                            <div class="mb-3">
+                                <label for="encryptedKey" class="form-label"><i class="fa-solid fa-key"></i> Clé AES chiffrée (générée automatiquement)</label>
+                                <textarea id="encryptedKey" class="form-control" rows="2" readonly placeholder="Sera généré automatiquement avant l'enregistrement"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="ivAES" class="form-label"><i class="fa-solid fa-hashtag"></i> IV AES-GCM (généré automatiquement)</label>
+                                <input type="text" id="ivAES" class="form-control" readonly placeholder="Sera généré automatiquement avant l'enregistrement">
+                            </div>
+
+                            <!-- Boutons d'action -->
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-primary btn-lg" id="startRecordingBtn">
+                                    <i class="fa-solid fa-play-circle"></i> Démarrer l'Enregistrement (5 secondes)
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Statut -->
+                        <div id="statusDiv" class="mt-3" style="display:none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="row g-3">
-      <!-- Auth & Contexte -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="mb-3"><i class="fa-solid fa-key me-2"></i>Authentification</h5>
+    <script>
+        const VIDEO_API = 'http://localhost:8002/api/videos';
+        const SECURITY_API = 'http://localhost:8003/api/security';
+        const RECORDING_DURATION = 5000; // 5 secondes
 
-            <!-- Token JWT -->
-            <div class="mb-4 p-3 bg-info bg-opacity-10 rounded">
-              <label for="tokenInput" class="form-label"><strong>🔐 Token JWT (Bearer) - SECTION BLEUE</strong></label>
-              <small class="text-muted d-block mb-2">
-                ✓ Copier APRÈS signup/login (commence par "ey")<br>
-                ✗ Pas la clé privée! La clé privée va dans la section ROUGE ci-dessous
-              </small>
-              <textarea id="tokenInput" class="form-control" rows="2" placeholder="eyJhbGciOiJIUzI1NiIs..."></textarea>
-              <div class="d-flex gap-2 mt-2">
-                <button id="saveTokenBtn" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i>Enregistrer Token</button>
-                <button id="importTokenBtn" class="btn btn-outline-info btn-sm"><i class="fa-solid fa-download me-1"></i>Importer depuis Auth</button>
-                <button id="clearTokenBtn" class="btn btn-outline-secondary btn-sm">Effacer</button>
-              </div>
-            </div>
+        let mediaStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let generatedAESKey = null;
+        let generatedIV = null;
 
-            <!-- Identité Utilisateur -->
-            <div class="mb-4 p-3 bg-success bg-opacity-10 rounded">
-              <label for="userId" class="form-label"><strong>👤 ID Utilisateur</strong></label>
-              <small class="text-muted d-block mb-2">Extrait du token ou saisi manuellement</small>
-              <input id="userId" class="form-control" placeholder="Votre ID utilisateur">
-            </div>
-
-            <!-- Destinataire (toujours Admin) -->
-            <div class="mb-4 p-3 bg-warning bg-opacity-10 rounded">
-              <label for="receiverId" class="form-label"><strong>📬 Destinataire</strong></label>
-              <small class="text-muted d-block mb-2">Fixé à ADMIN (non modifiable)</small>
-              <input id="receiverId" class="form-control" value="ADMIN" readonly>
-            </div>
-
-            <hr>
-
-            <!-- Clés RSA -->
-            <div class="mb-3">
-              <h6 class="mb-3"><i class="fa-solid fa-lock me-2"></i>Vos Clés RSA</h6>
-
-              <!-- Clé Privée -->
-              <div class="mb-3 p-2 border-start border-danger border-4">
-                <label for="privateKeyForStorage" class="form-label text-danger"><strong>🔑 Clé PRIVÉE - SECTION ROUGE - UTILISÉE POUR SIGNER</strong></label>
-                <small class="text-muted d-block mb-2">
-                  Format : <code>-----BEGIN PRIVATE KEY-----</code><br>
-                  <strong style="color: darkred;">⚠️ NE JAMAIS copier dans le champ Token JWT ci-dessus!</strong><br>
-                  Utilisée UNIQUEMENT : Quand vous cliquez "Signer" (pas pour l'upload)<br>
-                  Reste 100% côté client (jamais envoyée au serveur)
-                </small>
-                <textarea id="privateKeyForStorage" class="form-control form-control-sm" rows="3" placeholder="-----BEGIN PRIVATE KEY-----
-...
------END PRIVATE KEY-----"></textarea>
-              </div>
-
-              <!-- Clé Publique -->
-              <div class="p-2 border-start border-success border-4">
-                <label for="publicKeyForStorage" class="form-label text-success"><strong>🔓 Clé PUBLIQUE</strong></label>
-                <small class="text-muted d-block mb-2">Format : <code>-----BEGIN PUBLIC KEY-----</code><br>Utilisée pour : VÉRIFIER les signatures</small>
-                <textarea id="publicKeyForStorage" class="form-control form-control-sm" rows="3" placeholder="-----BEGIN PUBLIC KEY-----
-...
------END PUBLIC KEY-----"></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Upload -->
-      <div class="col-lg-8">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="mb-3"><i class="fa-solid fa-upload me-2"></i>Uploader une Vidéo</h5>
-
-            <!-- Guide d'utilisation -->
-            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
-              <strong>📖 Guide rapide :</strong><br>
-              <small>
-                1️⃣ Collez le <strong>Token JWT</strong> (bleu, section à gauche) → user_id auto-rempli<br>
-                2️⃣ Sélectionnez une vidéo, montant, clé chiffrée<br>
-                3️⃣ Cliquez "Uploader" (envoie token + fichier)<br>
-                4️⃣ Une fois uploadée, cliquez "Signer" dans la liste<br>
-                5️⃣ Dans le modal, collez votre <strong>Clé PRIVÉE</strong> (rouge, section à gauche)<br>
-                <strong style="color: red;">⚠️ IMPORTANT : Clé privée ≠ Token JWT! Voir les couleurs.</strong>
-              </small>
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            <form id="uploadForm">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label for="videoFile" class="form-label"><strong>Vidéo (.mp4 / .ts)</strong></label>
-                  <input type="file" id="videoFile" name="file" class="form-control" accept=".mp4,.webm,.ts,video/mp4,video/webm,video/*" capture="user" required>
-                  <div class="form-text">Formats autorisés: .mp4, .webm, .ts (webcam: video/webm / video/*)</div>
-                </div>
-                <div class="col-md-6">
-                  <label for="amount" class="form-label"><strong>Montant (RS)</strong></label>
-                  <div class="input-group">
-                    <span class="input-group-text">RS</span>
-                    <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0" placeholder="0.00" required>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <label for="senderId" class="form-label"><strong>ID Expéditeur (vous)</strong></label>
-                  <input type="text" id="senderId" name="sender_id" class="form-control" placeholder="Votre ID utilisateur" required>
-                  <div class="form-text">Éditable. Rempli auto depuis le token JWT.</div>
-                </div>
-                <div class="col-md-6">
-                  <label for="receiverIdForm" class="form-label"><strong>Destinataire</strong></label>
-                  <input type="text" id="receiverIdForm" name="receiver_id" class="form-control" value="ADMIN" readonly required>
-                  <div class="form-text">Toujours ADMIN (non modifiable).</div>
-                </div>
-                <div class="col-12">
-                  <label for="encryptedKey" class="form-label"><strong>Clé AES chiffrée (Base64)</strong></label>
-                  <textarea id="encryptedKey" name="encrypted_key" class="form-control" rows="2" placeholder="Collez la clé déjà chiffrée avec RSA-3072" required></textarea>
-                  <div class="form-text">Clé de chiffrement AES, elle-même chiffrée avec RSA-3072.</div>
-                </div>
-                <div class="col-12">
-                  <label for="ivAES" class="form-label"><strong>IV AES-GCM (Base64)</strong></label>
-                  <div class="input-group">
-                    <textarea id="ivAES" name="iv" class="form-control" rows="1" placeholder="IV généré automatiquement..." readonly required></textarea>
-                    <button class="btn btn-outline-secondary" type="button" onclick="generateIV()"><i class="fa-solid fa-dice me-1"></i>Générer IV</button>
-                    <button class="btn btn-outline-info" type="button" onclick="copyIV()"><i class="fa-solid fa-copy me-1"></i>Copier</button>
-                  </div>
-                  <div class="form-text">Vecteur d'initialisation AES-GCM (12 octets). Cliquez "Générer IV" pour créer automatiquement.</div>
-                </div>
-              </div>
-              <div class="mt-3 d-flex align-items-center gap-3">
-                <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Uploader</button>
-                <div class="progress flex-grow-1" style="height: 8px; max-width: 300px;">
-                  <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                </div>
-                <span id="progressText" class="token-chip"></span>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Liste & Actions -->
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Vidéos Uploadées</h5>
-              <div class="d-flex gap-2">
-                <button id="refreshBtn" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-rotate-right me-1"></i>Actualiser</button>
-              </div>
-            </div>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Statut</th>
-                    <th>Montant</th>
-                    <th>Signé</th>
-                    <th>IV</th>
-                    <th>Expire</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="videosList">
-                  <tr id="emptyState">
-                    <td colspan="7" class="text-center text-muted py-4"><i class="fa-solid fa-inbox me-2"></i>Aucune vidéo</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Signature -->
-  <div class="modal fade" id="signModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header bg-warning bg-opacity-10">
-          <h5 class="modal-title"><i class="fa-solid fa-pen-nib me-2"></i>Signer la Vidéo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="alert alert-info" role="alert">
-            <strong>⚠️ Important :</strong> Utilisez votre clé <strong>PRIVÉE</strong> RSA (celle-ci commence par <code>-----BEGIN PRIVATE KEY-----</code>),
-            PAS la clé publique (qui commence par <code>-----BEGIN PUBLIC KEY-----</code>).
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><strong>Video ID :</strong></label>
-            <code id="signVideoId" style="font-size: 12px; color: #d1d5db; word-break: break-all;"></code>
-          </div>
-          <div class="mb-3">
-            <label class="form-label" for="privateKeyPem"><strong>Clé Privée RSA (PEM)</strong></label>
-            <textarea id="privateKeyPem" class="form-control" rows="8" placeholder="-----BEGIN PRIVATE KEY-----
-...votre clé privée...
------END PRIVATE KEY-----" required></textarea>
-            <div class="form-text mt-2">
-              ✓ Format correct : commence par <code>-----BEGIN PRIVATE KEY-----</code><br>
-              ✗ Format incorrect : <code>-----BEGIN PUBLIC KEY-----</code> (c'est la clé publique, pas la privée)
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="button" class="btn btn-primary" id="confirmSignBtn"><i class="fa-solid fa-badge-check me-1"></i>Signer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const API_BASE = 'http://localhost:8002/api/videos';
-
-    // Helpers
-    const escapeHTML = (v) => (v == null ? '' : String(v).replaceAll(/[&<>'"`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c])));
-    const formatDate = (s) => (!s ? 'N/A' : new Date(s).toLocaleString('fr-FR', { year:'numeric', month:'short', day:'numeric' }));
-    const truncateId = (id) => (id ? id.substring(0, 8) + '...' + id.substring(id.length - 4) : '');
-    // Cherche d'abord le token local à l'UI (authToken), sinon celui stocké par l'écran de login Auth (access_token)
-    const getToken = () => localStorage.getItem('authToken') || localStorage.getItem('access_token') || '';
-    const setToken = (t) => localStorage.setItem('authToken', t || '');
-
-    function decodeJWT(token) {
-      try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        const payload = JSON.parse(atob(parts[1].replaceAll('-','+').replaceAll('_','/')));
-        return payload;
-      } catch { return null; }
-    }
-
-    function applyAuthContext() {
-      const token = getToken();
-      document.getElementById('tokenInput').value = token;
-      const payload = decodeJWT(token);
-      if (!payload) {
-        console.warn('Token invalide ou absent - les champs user_id restent vides.');
-        console.log('Assurez-vous de vous être connecté via /login (pas /signup).');
-        return;
-      }
-      const userId = payload?.user_id || '';
-      if (!userId) {
-        console.warn('user_id manquant dans le token. Avez-vous utilisé /login ?');
-      }
-      document.getElementById('userId').value = userId;
-      document.getElementById('senderId').value = userId;  // Editable now, but pre-filled
-      document.getElementById('receiverId').value = 'ADMIN';
-      document.getElementById('receiverIdForm').value = 'ADMIN';
-    }
-
-    // Stockage des clés RSA (localStorage)
-    function storeRSAKeys(privateKey, publicKey) {
-      localStorage.setItem('privateKey', privateKey || '');
-      localStorage.setItem('publicKey', publicKey || '');
-      document.getElementById('privateKeyForStorage').value = privateKey || '';
-      document.getElementById('publicKeyForStorage').value = publicKey || '';
-      alert('✅ Clés RSA stockées localement.\n\n⚠️ IMPORTANT: Conservez une copie de sécurité de votre clé PRIVÉE!');
-    }
-
-    function getStoredPrivateKey() {
-      return localStorage.getItem('privateKey') || '';
-    }
-
-    function getStoredPublicKey() {
-      return localStorage.getItem('publicKey') || '';
-    }
-
-    // Token actions
-    document.getElementById('saveTokenBtn').addEventListener('click', () => {
-      const t = document.getElementById('tokenInput').value.trim();
-
-      // Validation : un JWT commence toujours par "ey"
-      if (t && !t.startsWith('ey')) {
-        alert('❌ ERREUR : Vous avez probablement collé une clé RSA au lieu d\'un token JWT.\n\nUn token JWT commence par "ey".\n\nVotre token JWT se trouve dans la réponse de login/signup, pas dans les fichiers des clés RSA.');
-        return;
-      }
-
-      setToken(t);
-      applyAuthContext();
-      if (t) alert('✅ Token enregistré avec succès!');
-    });
-
-    document.getElementById('clearTokenBtn').addEventListener('click', () => {
-      setToken('');
-      applyAuthContext();
-    });
-
-    // Importer le token sauvegardé par l'écran de login Auth (clé access_token)
-    const importBtn = document.getElementById('importTokenBtn');
-    if (importBtn) {
-      importBtn.addEventListener('click', () => {
-        const t = localStorage.getItem('access_token') || '';
-        if (!t) { alert('Aucun token trouvé depuis Auth. Connectez-vous via http://localhost:8001/'); return; }
-        document.getElementById('tokenInput').value = t;
-        setToken(t);
-        applyAuthContext();
-        alert('Token importé depuis Auth');
-      });
-    }
-
-    // Upload
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const token = getToken();
-      if (!token) { alert('Veuillez coller votre token JWT dans la section Authentification.'); return; }
-
-      const formData = new FormData(document.getElementById('uploadForm'));
-      const submitBtn = document.getElementById('submitBtn');
-      const progressBar = document.getElementById('progressBar');
-      const progressText = document.getElementById('progressText');
-      submitBtn.disabled = true;
-
-      try {
-        progressBar.style.width = '15%'; progressText.textContent = 'Préparation...';
-        const resp = await fetch(`${API_BASE}/upload`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData
-        });
-        if (!resp.ok) throw new Error(await resp.text());
-        progressBar.style.width = '75%'; progressText.textContent = 'Traitement...';
-        const data = await resp.json();
-        progressBar.style.width = '100%'; progressText.textContent = 'Terminé';
-        alert(`Upload OK. ID: ${data.video_id}. Signez la vidéo dans la liste.`);
-        document.getElementById('uploadForm').reset();
-        await loadVideos();
-      } catch (err) {
-        alert('Erreur upload: ' + (err?.message || err));
-      } finally {
-        submitBtn.disabled = false;
-        setTimeout(() => { progressBar.style.width = '0%'; progressText.textContent = ''; }, 800);
-      }
-    });
-
-    // Liste
-    async function loadVideos() {
-      try {
-        const response = await fetch(`${API_BASE}/list`);
-        const videos = await response.json();
-        const tbody = document.getElementById('videosList');
-        const emptyState = document.getElementById('emptyState');
-        tbody.innerHTML = '';
-        if (!videos.length) { emptyState.style.display='table-row'; tbody.appendChild(emptyState); return; }
-        emptyState.style.display='none';
-        videos.forEach((v) => {
-          const tr = document.createElement('tr');
-          const idCell = document.createElement('td'); idCell.textContent = truncateId(v.id);
-          const stCell = document.createElement('td'); const b = document.createElement('span'); b.className='badge bg-secondary badge-status'; b.textContent = v.status; stCell.appendChild(b);
-          const amtCell = document.createElement('td'); amtCell.textContent = `RS ${Number.parseFloat(v.amount ?? 0).toFixed(2)}`;
-          const signedCell = document.createElement('td'); signedCell.textContent = v.is_signed ? 'Oui' : 'Non';
-          const ivCell = document.createElement('td');
-          if (v.iv) {
-            const ivCode = document.createElement('code');
-            ivCode.className = 'small text-muted';
-            ivCode.textContent = v.iv.substring(0, 12) + '...';
-            ivCode.title = v.iv;  // Afficher l'IV complet au survol
-            ivCell.appendChild(ivCode);
-          } else {
-            ivCell.innerHTML = '<em class="text-muted">N/A</em>';
-          }
-          const expCell = document.createElement('td'); expCell.textContent = formatDate(v.expires_at);
-          const actCell = document.createElement('td');
-          const viewBtn = document.createElement('a'); viewBtn.className='btn btn-sm btn-outline-primary me-1'; viewBtn.textContent='Voir'; viewBtn.href=`${API_BASE}/${v.id}`; viewBtn.target='_blank';
-          const dlBtn = document.createElement('a'); dlBtn.className='btn btn-sm btn-primary me-1'; dlBtn.textContent='Télécharger'; dlBtn.href=`${API_BASE}/${v.id}/download`;
-          const signBtn = document.createElement('button'); signBtn.className='btn btn-sm btn-success'; signBtn.textContent='Signer'; signBtn.disabled = !!v.is_signed; signBtn.addEventListener('click', () => openSignModal(v.id));
-          actCell.appendChild(viewBtn); actCell.appendChild(dlBtn); actCell.appendChild(signBtn);
-          tr.appendChild(idCell); tr.appendChild(stCell); tr.appendChild(amtCell); tr.appendChild(signedCell); tr.appendChild(ivCell); tr.appendChild(expCell); tr.appendChild(actCell);
-          tbody.appendChild(tr);
-        });
-      } catch(e) { alert('Erreur chargement liste'); }
-    }
-    document.getElementById('refreshBtn').addEventListener('click', loadVideos);
-
-    // Signature
-    let signModalInstance = null;
-    function openSignModal(videoId) {
-      document.getElementById('signVideoId').textContent = videoId;
-      const modalEl = document.getElementById('signModal');
-      signModalInstance = new bootstrap.Modal(modalEl);
-      signModalInstance.show();
-    }
-    document.getElementById('confirmSignBtn').addEventListener('click', async () => {
-      const token = getToken();
-      if (!token) { alert('Token requis pour signer'); return; }
-      const videoId = document.getElementById('signVideoId').textContent;
-      const privateKey = document.getElementById('privateKeyPem').value.trim();
-      if (!privateKey) { alert('Veuillez coller votre clé privée PEM'); return; }
-
-      // Validation : vérifier que c'est bien une CLÉS PRIVÉE et pas une clé publique
-      if (!privateKey.includes('BEGIN PRIVATE KEY')) {
-        alert('❌ ERREUR : Vous avez collé une clé publique ou un format incorrect.\n\nAssurez-vous de coller une clé qui commence par :\n-----BEGIN PRIVATE KEY-----\n\net NON pas :\n-----BEGIN PUBLIC KEY-----');
-        return;
-      }
-
-      // Construire le FormData correctement
-      const form = new FormData();
-      form.append('private_key_pem', privateKey);
-
-      try {
-        console.log(`Signature: POST ${API_BASE}/${videoId}/sign`);
-        const resp = await fetch(`${API_BASE}/${videoId}/sign`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: form
-        });
-
-        const respText = await resp.text();
-        console.log(`Signature response status: ${resp.status}`);
-        console.log(`Signature response body: ${respText}`);
-
-        if (!resp.ok) {
-          throw new Error(`HTTP ${resp.status}: ${respText}`);
+        async function logout(){
+            localStorage.removeItem('access_token');
+            window.location.href = '/';
         }
 
-        const data = JSON.parse(respText);
-        alert('✅ Signature OK: ' + data.message);
-        signModalInstance?.hide();
-        document.getElementById('privateKeyPem').value = '';
-        await loadVideos();
-      } catch(err) {
-        console.error('Signature error:', err);
-        alert('❌ Erreur signature: ' + (err?.message || err));
-      }
-    });
+        function pemToArrayBuffer(pem) {
+            const b64 = pem
+                .replaceAll('-----BEGIN PUBLIC KEY-----', '')
+                .replaceAll('-----END PUBLIC KEY-----', '')
+                .replaceAll(/\s/g, '');
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            // Note: Pour la conversion binaire, on utilise codePointAt (compatible Unicode)
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.codePointAt(i);
+            }
+            return bytes.buffer;
+        }
 
-    // Suppression protégée (nécessite token)
-    async function deleteVideo(videoId) {
-      const token = getToken();
-      if (!token) { alert('Token requis pour supprimer'); return; }
-      if (!confirm('Êtes-vous sûr de vouloir supprimer cette vidéo ?')) return;
-      try {
-        const resp = await fetch(`${API_BASE}/${videoId}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${token}` } });
-        if (!resp.ok) throw new Error(await resp.text());
-        alert('Vidéo supprimée');
-        await loadVideos();
-      } catch(err) { alert('Erreur suppression: ' + (err?.message || err)); }
-    }
+        async function generateEncryptionKeys() {
+            try {
+                // Générer IV aléatoire (12 bytes)
+                generatedIV = crypto.getRandomValues(new Uint8Array(12));
+                // Note: Pour la conversion binaire vers Base64, on utilise fromCodePoint
+                const ivBase64 = btoa(String.fromCodePoint(...generatedIV));
+                document.getElementById('ivAES').value = ivBase64;
 
-    // Génération de l'IV AES-GCM
-    function generateIV() {
-      try {
-        // Générer un IV aléatoire de 12 octets (recommandé pour AES-GCM)
-        const iv = new Uint8Array(12);
-        crypto.getRandomValues(iv);
+                // Générer clé AES-256 aléatoire
+                const aesKey = await crypto.subtle.generateKey(
+                    { name: 'AES-GCM', length: 256 },
+                    true,
+                    ['encrypt', 'decrypt']
+                );
 
-        // Convertir en Base64 (utilise fromCodePoint pour compatibilité Unicode)
-        const ivBase64 = btoa(String.fromCodePoint(...iv));
+                const aesKeyRaw = await crypto.subtle.exportKey('raw', aesKey);
+                generatedAESKey = new Uint8Array(aesKeyRaw);
 
-        // Afficher dans le champ
-        document.getElementById('ivAES').value = ivBase64;
+                // Récupérer la clé publique RSA de l'admin
+                console.log('Fetching admin public key from:', `${SECURITY_API}/keys/admin-public`);
+                const response = await fetch(`${SECURITY_API}/keys/admin-public`);
 
-        console.log('✅ IV généré:', ivBase64);
-        console.log('   Longueur:', iv.length, 'octets');
-        console.log('   Base64 length:', ivBase64.length, 'caractères');
-      } catch (error) {
-        console.error('Erreur génération IV:', error);
-        alert('❌ Erreur lors de la génération de l\'IV: ' + error.message);
-      }
-    }
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    throw new Error(`Impossible de récupérer la clé publique admin (HTTP ${response.status}): ${errorText}`);
+                }
 
-    // Copier l'IV dans le presse-papier
-    function copyIV() {
-      const ivInput = document.getElementById('ivAES');
-      const ivValue = ivInput.value.trim();
+                const data = await response.json();
+                const { public_key_pem } = data;
 
-      if (!ivValue) {
-        alert('❌ Veuillez d\'abord générer un IV en cliquant sur "Générer IV"');
-        return;
-      }
+                if (!public_key_pem) {
+                    throw new Error('Clé publique manquante dans la réponse du serveur');
+                }
 
-      ivInput.select();
-      document.execCommand('copy');
-      alert('✅ IV copié dans le presse-papier!\n\nIV: ' + ivValue);
-    }
+                // Importer la clé publique RSA
+                const publicKey = await crypto.subtle.importKey(
+                    'spki',
+                    pemToArrayBuffer(public_key_pem),
+                    { name: 'RSA-OAEP', hash: 'SHA-256' },
+                    false,
+                    ['encrypt']
+                );
 
-    // Init
-    applyAuthContext();
-    // Charger les clés stockées
-    const storedPrivate = getStoredPrivateKey();
-    const storedPublic = getStoredPublicKey();
-    if (storedPrivate) document.getElementById('privateKeyForStorage').value = storedPrivate;
-    if (storedPublic) document.getElementById('publicKeyForStorage').value = storedPublic;
-    loadVideos();
-  </script>
+                // Chiffrer la clé AES avec RSA
+                const encryptedKeyBuffer = await crypto.subtle.encrypt(
+                    { name: 'RSA-OAEP' },
+                    publicKey,
+                    generatedAESKey
+                );
+
+                // Note: Pour la conversion binaire vers Base64, on utilise fromCodePoint
+                const encryptedKeyBase64 = btoa(
+                    String.fromCodePoint(...new Uint8Array(encryptedKeyBuffer))
+                );
+                document.getElementById('encryptedKey').value = encryptedKeyBase64;
+
+                showStatus('success', '✅ Clés générées avec succès !');
+                return true;
+            } catch (error) {
+                console.error('Erreur génération clés:', error);
+                showStatus('danger', '❌ Erreur lors de la génération des clés: ' + error.message);
+                return false;
+            }
+        }
+
+        async function initWebcam() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: true
+                });
+                document.getElementById('videoPreview').srcObject = mediaStream;
+                return true;
+            } catch (error) {
+                console.error('Erreur webcam:', error);
+                showStatus('danger', '❌ Impossible d\'accéder à la webcam: ' + error.message);
+                return false;
+            }
+        }
+
+        function showCountdown(seconds, callback) {
+            const countdownEl = document.getElementById('countdown');
+            countdownEl.style.display = 'block';
+            let remaining = seconds;
+            countdownEl.textContent = remaining;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining > 0) {
+                    countdownEl.textContent = remaining;
+                } else {
+                    clearInterval(interval);
+                    countdownEl.style.display = 'none';
+                    if (callback) callback();
+                }
+            }, 1000);
+        }
+
+        async function startRecording() {
+            // Générer automatiquement les clés au démarrage
+            const keysGenerated = await generateEncryptionKeys();
+            if (!keysGenerated) return;
+
+            const webcamReady = await initWebcam();
+            if (!webcamReady) return;
+
+            document.getElementById('startRecordingBtn').disabled = true;
+            showStatus('info', '<i class="fa-solid fa-spinner fa-spin"></i> Préparation de l\'enregistrement...');
+
+            // Compte à rebours de 3 secondes
+            showCountdown(3, () => {
+                // Démarrer l\'enregistrement
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(mediaStream, {
+                    mimeType: 'video/webm;codecs=vp9'
+                });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    document.getElementById('recordingIndicator').style.display = 'none';
+                    showStatus('info', '<i class="fa-solid fa-spinner fa-spin"></i> Traitement et upload de la vidéo...');
+                    await uploadVideo();
+                };
+
+                mediaRecorder.start();
+                document.getElementById('recordingIndicator').style.display = 'block';
+                showStatus('warning', '<i class="fa-solid fa-circle"></i> Enregistrement en cours... (5 secondes)');
+
+                // Arrêter après 5 secondes
+                setTimeout(() => {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        if (mediaStream) {
+                            mediaStream.getTracks().forEach(track => track.stop());
+                        }
+                    }
+                }, RECORDING_DURATION);
+            });
+        }
+
+        async function uploadVideo() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                showStatus('danger', '❌ Veuillez vous connecter d\'abord');
+                setTimeout(() => window.location.href = '/', 2000);
+                return;
+            }
+
+            const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+            const encryptedKey = document.getElementById('encryptedKey').value;
+            const iv = document.getElementById('ivAES').value;
+            const amount = document.getElementById('amount').value;
+
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userId = payload.user_id;
+
+            const formData = new FormData();
+            formData.append('file', videoBlob, 'confirmation.webm');
+            formData.append('sender_id', userId);
+            formData.append('receiver_id', 'ADMIN');
+            formData.append('encrypted_key', encryptedKey);
+            formData.append('iv', iv);
+            formData.append('amount', amount);
+
+            try {
+                const response = await fetch(`${VIDEO_API}/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    let errorMsg = 'Erreur upload';
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.detail || errorData.message || JSON.stringify(errorData);
+                    } catch(e) {
+                        errorMsg = await response.text() || `HTTP ${response.status}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+                const videoId = result.video_id || result.id;
+                
+                showStatus('success', `✅ Vidéo envoyée avec succès ! ID: ${escapeHtml(videoId)}`);
+                
+                // Générer et télécharger le fichier .txt avec les clés
+                downloadKeysFile(videoId, encryptedKey, iv);
+
+                // Rediriger après succès
+                setTimeout(() => {
+                    globalThis.location.href = '../index-user.html';
+                }, 3000);
+
+            } catch (error) {
+                console.error('Erreur upload:', error);
+                const errorMessage = error.message || String(error);
+                showStatus('danger', `❌ Erreur upload: ${escapeHtml(errorMessage)}`);
+                document.getElementById('startRecordingBtn').disabled = false;
+            }
+        }
+
+        /**
+         * Télécharge un fichier .txt contenant les clés de déchiffrement
+         * Format: VIDEO_ID, IV_AES_GCM, AES_KEY_ENCRYPTED, RECIPIENT_PUBLIC_KEY
+         */
+        async function downloadKeysFile(videoId, encryptedKey, iv) {
+            try {
+                // Récupérer la clé publique de l'admin
+                const adminKeyResponse = await fetch(`${SECURITY_API}/keys/admin-public`);
+                if (!adminKeyResponse.ok) {
+                    throw new Error('Impossible de récupérer la clé publique admin');
+                }
+                const adminKeyData = await adminKeyResponse.json();
+                const adminPublicKey = adminKeyData.public_key_pem;
+
+                // Créer le contenu du fichier .txt
+                const fileContent = `VIDEO_ID=${videoId}
+IV_AES_GCM=${iv}
+AES_KEY_ENCRYPTED=${encryptedKey}
+RECIPIENT_PUBLIC_KEY=${adminPublicKey}`;
+
+                // Créer un blob et déclencher le téléchargement
+                const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `video-keys-${videoId}.txt`;
+                link.click();
+                
+                // Nettoyer
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+            } catch (error) {
+                console.error('Erreur téléchargement fichier clés:', error);
+                showStatus('warning', `⚠️ Avertissement: Impossible de télécharger le fichier clés (${error.message}). Gardez une copie de vos clés!`);
+            }
+        }
+
+        /**
+         * Échappe les caractères HTML dangereux pour prévenir les attaques XSS.
+         */
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            return String(text)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('statusDiv');
+            statusDiv.className = `alert alert-${escapeHtml(type)}`;
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+            const startRecordingBtn = document.getElementById('startRecordingBtn');
+            if (startRecordingBtn) startRecordingBtn.addEventListener('click', startRecording);
+
+            const generateKeysBtn = document.getElementById('generateKeysBtn');
+            if (generateKeysBtn) generateKeysBtn.addEventListener('click', generateEncryptionKeys);
+
+            initWebcam();
+        });
+    </script>
 </body>
 </html>

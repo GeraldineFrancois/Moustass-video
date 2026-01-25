@@ -83,6 +83,13 @@
                             L'enregistrement durera automatiquement 5 secondes, puis votre vidéo sera envoyée avec les informations saisies ci-dessous.
                         </div>
 
+                        <div class="alert alert-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <strong>⚠️ Important - Sécurité:</strong> Un fichier texte contenant vos clés de déchiffrement sera téléchargé automatiquement après l'upload.
+                            <br><strong>Gardez ce fichier en sécurité — il contient les clés nécessaires pour déchiffrer votre vidéo.</strong>
+                            <br>Ne le partagez qu'avec des personnes de confiance.
+                        </div>
+
                         <!-- Aperçu vidéo -->
                         <div class="text-center mb-4">
                             <div class="video-container">
@@ -122,9 +129,6 @@
                             <div class="d-grid gap-2">
                                 <button type="button" class="btn btn-primary btn-lg" id="startRecordingBtn">
                                     <i class="fa-solid fa-play-circle"></i> Démarrer l'Enregistrement (5 secondes)
-                                </button>
-                                <button type="button" class="btn btn-secondary" id="generateKeysBtn">
-                                    <i class="fa-solid fa-key"></i> Générer les Clés de Chiffrement
                                 </button>
                             </div>
                         </form>
@@ -267,10 +271,9 @@
         }
 
         async function startRecording() {
-            if (!generatedAESKey || !generatedIV) {
-                const keysGenerated = await generateEncryptionKeys();
-                if (!keysGenerated) return;
-            }
+            // Générer automatiquement les clés au démarrage
+            const keysGenerated = await generateEncryptionKeys();
+            if (!keysGenerated) return;
 
             const webcamReady = await initWebcam();
             if (!webcamReady) return;
@@ -359,18 +362,176 @@
                 }
 
                 const result = await response.json();
-                showStatus('success', `✅ Vidéo envoyée avec succès ! ID: ${escapeHtml(result.video_id || result.id)}`);
+                const videoId = result.video_id || result.id;
+                
+                showStatus('success', `✅ Vidéo envoyée avec succès ! ID: ${escapeHtml(videoId)}`);
+                
+                // Afficher les clés dans une modal avant de télécharger
+                displayKeysModal(videoId, encryptedKey, iv);
+                
+                // Générer et télécharger le fichier .txt avec les clés
+                setTimeout(() => {
+                    downloadKeysFile(videoId, encryptedKey, iv);
+                }, 500);
 
-                // Réinitialiser après succès
+                // Rediriger après succès
                 setTimeout(() => {
                     globalThis.location.href = '../index-user.html';
-                }, 2000);
+                }, 4000);
 
             } catch (error) {
                 console.error('Erreur upload:', error);
                 const errorMessage = error.message || String(error);
                 showStatus('danger', `❌ Erreur upload: ${escapeHtml(errorMessage)}`);
                 document.getElementById('startRecordingBtn').disabled = false;
+            }
+        }
+
+        /**
+         * Affiche les clés dans une modal
+         */
+        function displayKeysModal(videoId, encryptedKey, iv) {
+            // Récupérer la clé publique de l'utilisateur depuis localStorage
+            const userPublicKey = localStorage.getItem('user_public_key') || 'NON DÉFINIE - Générez vos clés RSA';
+            
+            // Vérifier si la modal existe, sinon la créer
+            let modal = document.getElementById('keysModal');
+            if (!modal) {
+                const modalHtml = `
+                    <div class="modal fade" id="keysModal" tabindex="-1" role="dialog">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header bg-info text-white">
+                                    <h5 class="modal-title"><i class="fa-solid fa-key"></i> Vos Clés de Déchiffrement et Signature</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-warning">
+                                        <strong>⚠️ Important:</strong> Sauvegardez ces informations en lieu sûr! Vous en aurez besoin pour déchiffrer votre vidéo et vérifier la signature.
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label><strong>VIDEO_ID:</strong></label>
+                                        <input type="text" class="form-control" id="modalVideoId" readonly>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label><strong>IV_AES_GCM:</strong></label>
+                                        <textarea class="form-control" id="modalIV" readonly rows="2"></textarea>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label><strong>AES_KEY_ENCRYPTED:</strong></label>
+                                        <textarea class="form-control" id="modalEncryptedKey" readonly rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label><strong>USER_PUBLIC_KEY (pour vérifier la signature):</strong></label>
+                                        <textarea class="form-control" id="modalUserPublicKey" readonly rows="6"></textarea>
+                                        <small class="text-muted">Cette clé est nécessaire pour vérifier l'authenticité de votre vidéo signée.</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                    <button type="button" class="btn btn-primary" id="copyKeysBtn"><i class="fa-solid fa-copy"></i> Copier tout</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                modal = document.getElementById('keysModal');
+            }
+
+            // Remplir les champs
+            document.getElementById('modalVideoId').value = videoId;
+            document.getElementById('modalIV').value = iv;
+            document.getElementById('modalEncryptedKey').value = encryptedKey;
+            document.getElementById('modalUserPublicKey').value = userPublicKey;
+
+            // Gérer le bouton copier
+            document.getElementById('copyKeysBtn').onclick = () => {
+                const allText = `VIDEO_ID=${videoId}\nIV_AES_GCM=${iv}\nAES_KEY_ENCRYPTED=${encryptedKey}\nUSER_PUBLIC_KEY=${userPublicKey}`;
+                navigator.clipboard.writeText(allText).then(() => {
+                    showStatus('success', '✓ Clés copiées dans le presse-papiers!');
+                }).catch(() => {
+                    showStatus('danger', 'Erreur copie. Veuillez copier manuellement.');
+                });
+            };
+
+            // Afficher la modal
+            const bsModal = new bootstrap.Modal(modal, { backdrop: 'static', keyboard: false });
+            bsModal.show();
+        }
+
+        /**
+         * Télécharge un fichier .txt contenant les clés de déchiffrement
+         * Format: VIDEO_ID, IV_AES_GCM, AES_KEY_ENCRYPTED, RECIPIENT_PUBLIC_KEY
+         */
+        async function downloadKeysFile(videoId, encryptedKey, iv) {
+            try {
+                console.log('🔑 Début du téléchargement des clés...');
+                
+                // Récupérer la clé publique de l'admin
+                console.log(`Récupération clé publique admin depuis: ${SECURITY_API}/keys/admin-public`);
+                const adminKeyResponse = await fetch(`${SECURITY_API}/keys/admin-public`);
+                if (!adminKeyResponse.ok) {
+                    throw new Error(`HTTP ${adminKeyResponse.status}: Impossible de récupérer la clé publique admin`);
+                }
+                const adminKeyData = await adminKeyResponse.json();
+                const adminPublicKey = adminKeyData.public_key_pem;
+                console.log('✓ Clé publique admin reçue');
+
+                // Récupérer la clé publique de l'utilisateur depuis localStorage
+                const userPublicKey = localStorage.getItem('user_public_key') || 'NON_DÉFINIE';
+                
+                // Créer le contenu du fichier .txt
+                const fileContent = `VIDEO_ID=${videoId}
+IV_AES_GCM=${iv}
+AES_KEY_ENCRYPTED=${encryptedKey}
+ADMIN_PUBLIC_KEY=${adminPublicKey}
+USER_PUBLIC_KEY=${userPublicKey}`;
+
+                console.log('✓ Contenu du fichier créé');
+                console.log(`  - VIDEO_ID: ${videoId}`);
+                console.log(`  - IV_AES_GCM: ${iv.substring(0, 20)}...`);
+                console.log(`  - AES_KEY_ENCRYPTED: ${encryptedKey.substring(0, 20)}...`);
+
+                // Créer un blob et déclencher le téléchargement
+                const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                console.log(`✓ Blob créé, URL: ${url}, Taille: ${blob.size} bytes`);
+                
+                // Créer un lien temporaire et forcer le clic
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `video-keys-${videoId}.txt`);
+                link.style.display = 'none';
+                
+                // Ajouter le lien au DOM avant de cliquer
+                document.body.appendChild(link);
+                console.log('✓ Lien ajouté au DOM');
+                console.log(`✓ Données prêtes à télécharger: ${link.getAttribute('download')}`);
+                
+                // Simuler un clic utilisateur
+                link.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                }));
+                console.log('✓ Événement click déclenché');
+                
+                // Nettoyer après le téléchargement
+                setTimeout(() => {
+                    try {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        console.log('✓ Ressources nettoyées');
+                    } catch (e) {
+                        console.warn('Erreur nettoyage DOM:', e);
+                    }
+                }, 1000);
+                
+                console.log('🔑 Téléchargement des clés réussi !');
+            } catch (error) {
+                console.error('❌ Erreur téléchargement fichier clés:', error);
+                showStatus('warning', `⚠️ Impossible de télécharger le fichier clés. Vérifiez la console (F12) pour plus de détails.`);
             }
         }
 
