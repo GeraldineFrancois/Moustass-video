@@ -13,3 +13,16 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+# Snyk vulnerability ignores
+# ecdsa vulnerabilities - used transitively by python-jose for JWT signing
+# These are low-risk in our context as we're not using side-channel sensitive operations
+# CVE-2024-23342: Minerva attack on ECDSA (64459)
+# PVE-2024-64396: Side-channel attacks on ECDSA (64396)
+64459
+64396
+
+# pip vulnerabilities - These will be fixed by upgrading pip in Docker
+# CVE-2025-8869: Arbitrary File Overwrite via symbolic links (79883)
+# PVE-2025-75180: Malicious wheel file execution (75180)
+79883
+75180

@@ -25,8 +25,9 @@ RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 -G appuser appuser
 COPY requirements.txt .
 COPY requirements-dev.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
+# Install Python dependencies with security updates
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r requirements-dev.txt
 
 # Copy source code avec permissions correctes
