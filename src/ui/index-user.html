@@ -12,7 +12,7 @@
 <body>
 	<nav class="navbar navbar-expand-lg bg-body-tertiary">
 		<div class="container-fluid">
-			<a class="navbar-brand" href="#" role="button" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault(); this.click();}"><i class="fa-solid fa-video"></i> Moustass Video</a>
+			<a class="navbar-brand" href="./index-user.html"><i class="fa-solid fa-video"></i> Moustass Video</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 			</button>
@@ -22,9 +22,9 @@
 						<a class="nav-link active" aria-current="page" href="./index-user.html"><i class="fa-solid fa-house"></i> Accueil</a>
 					</li>
 					<li class="nav-item dropdown">
-						<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault(); this.click();}">
+						<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 							<i class="fa-solid fa-video"></i> Vidéo
-						</a>
+						</button>
 						<ul class="dropdown-menu">
 							<li><a class="dropdown-item" href="./pages/upload-video-user.html"><i class="fa-solid fa-upload"></i> Uploader</a></li>
 							<li><a class="dropdown-item" href="#videosSection"><i class="fa-solid fa-list"></i> Mes vidéos</a></li>
@@ -34,7 +34,7 @@
 						<a class="nav-link" href="./pages/generate-rsa-keys.html"><i class="fa-solid fa-key"></i> Mes Clés RSA</a>
 					</li>
 					<li class="nav-item">
-						<button class="btn btn-link nav-link" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</button>
+						<button class="btn btn-link nav-link" id="logoutBtn" type="button"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</button>
 					</li>
 				</ul>
 			</div>

@@ -12,7 +12,7 @@
 <body>
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#"><i class="fa-solid fa-video"></i> Moustass Video</a>
+            <a class="navbar-brand" href="../index-user.html"><i class="fa-solid fa-video"></i> Moustass Video</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -62,7 +62,7 @@
                             <div class="form-group mb-3">
                                 <label for="publicKeyTextarea"><strong>Clé Publique (PEM)</strong></label>
                                 <textarea id="publicKeyTextarea" class="form-control" readonly rows="8"></textarea>
-                                <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyPublicKey()">
+                                <button id="copyPublicKeyBtn" class="btn btn-sm btn-outline-secondary mt-2" type="button">
                                     <i class="fa-solid fa-copy"></i> Copier
                                 </button>
                             </div>
@@ -70,13 +70,13 @@
                             <div class="form-group mb-3">
                                 <label for="privateKeyTextarea"><strong>Clé Privée (PEM) - ⚠️ À garder secrète!</strong></label>
                                 <textarea id="privateKeyTextarea" class="form-control" readonly rows="12"></textarea>
-                                <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyPrivateKey()">
+                                <button id="copyPrivateKeyBtn" class="btn btn-sm btn-outline-secondary mt-2" type="button">
                                     <i class="fa-solid fa-copy"></i> Copier
                                 </button>
                             </div>
 
                             <div class="text-center">
-                                <button class="btn btn-primary btn-lg" onclick="downloadKeysFile()">
+                                <button id="downloadKeysBtn" class="btn btn-primary btn-lg" type="button">
                                     <i class="fa-solid fa-download"></i> Télécharger les Clés (.txt)
                                 </button>
                             </div>
@@ -100,6 +100,9 @@
         });
 
         document.getElementById('generateBtn').addEventListener('click', generateRSAKeys);
+        document.getElementById('copyPublicKeyBtn').addEventListener('click', copyPublicKey);
+        document.getElementById('copyPrivateKeyBtn').addEventListener('click', copyPrivateKey);
+        document.getElementById('downloadKeysBtn').addEventListener('click', downloadKeysFile);
 
         async function generateRSAKeys() {
             try {
