@@ -3,69 +3,135 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous">
-    <title>Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="/ui/css/glassmorphism.css">
+    <title>Connexion - Moustass Video</title>
+    <style>
+      /* Page-specific styles for centered login layout */
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 1rem;
+      }
+      .login-container {
+        max-width: 480px;
+        width: 100%;
+      }
+      .brand-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .brand-header i {
+        font-size: 3rem;
+        background: linear-gradient(90deg, var(--primary-blue), var(--primary-violet));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .brand-header h1 {
+        font-size: 1.8rem;
+        margin-top: 0.5rem;
+      }
+    </style>
   </head>
-  <body class="bg-light">
-    <div class="container mt-5">
-      <div class="row justify-content-center">
-        <div class="col-md-6">
-          <div class="card p-4">
-            <h3 class="card-title">Connexion</h3>
-            <form id="loginForm" method="post" action="/login" autocomplete="on">
-              <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required autocomplete="email">
-              </div>
-              <div class="mb-3">
-                <label for="password" class="form-label">Mot de passe</label>
-                <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
-              </div>
-              <button class="btn btn-primary" type="submit">Se connecter</button>
-            </form>
-            <hr>
-            <div>
-              <button type="button" class="btn btn-link p-0" onclick="showSignup('client')">Créer un client</button>
+  <body>
+    <div class="login-container">
+      <div class="brand-header">
+        <i class="fa-solid fa-video"></i>
+        <h1>Moustass Video</h1>
+        <p class="text-muted small">Plateforme sécurisée de partage vidéo</p>
+      </div>
+
+      <div class="card">
+        <div class="card-body p-4">
+          <h3 class="card-title mb-4"><i class="fa-solid fa-right-to-bracket"></i> Connexion</h3>
+          <form id="loginForm" method="post" action="/login" autocomplete="on">
+            <div class="mb-3">
+              <label for="email" class="form-label"><i class="fa-solid fa-envelope"></i> Email</label>
+              <input type="email" class="form-control" id="email" name="email" required autocomplete="email" placeholder="votre@email.com">
             </div>
-            <div id="signup" class="mt-3" style="display:none">
-              <form id="signupForm" method="post" autocomplete="on">
-                <input type="hidden" id="role" name="role" value="client">
-                <div class="mb-2"><input id="signupFirstname" class="form-control" type="text" name="firstname" placeholder="Prénom" required autocomplete="given-name"></div>
-                <div class="mb-2"><input id="signupLastname" class="form-control" type="text" name="lastname" placeholder="Nom" required autocomplete="family-name"></div>
-                <div class="mb-2"><input id="signupEmail" class="form-control" type="email" name="email" placeholder="Email" required autocomplete="email"></div>
-                <div class="mb-2"><input id="signupPassword" class="form-control" type="password" name="password" placeholder="Mot de passe" required autocomplete="new-password"></div>
-                <div class="mb-2"><input id="signupConfirm" class="form-control" type="password" name="confirm_password" placeholder="Confirmer mot de passe" required autocomplete="new-password"></div>
-                <button class="btn btn-success">Créer</button>
-              </form>
-              <div id="responseBox" class="mt-2" style="display:none">
-                <div class="mb-2">
-                  <label for="tokenText" class="form-label">Token JWT (Bearer)</label>
-                  <div class="input-group">
-                    <textarea id="tokenText" class="form-control" rows="2" readonly></textarea>
-                    <button id="copyToken" class="btn btn-outline-secondary" type="button">Copier</button>
-                  </div>
-                  <div class="form-text">Ce token commence par "ey". Il sera automatiquement stocké et utilisable dans la page Upload.</div>
-                </div>
-                <div class="mb-2">
-                  <label for="privateKeyText" id="responseTitle" class="form-label">Clé privée</label>
-                  <div class="input-group">
-                    <textarea id="privateKeyText" class="form-control" rows="6" readonly></textarea>
-                    <button id="copyPrivate" class="btn btn-outline-secondary" type="button">Copier</button>
-                  </div>
-                </div>
-                <div class="mb-2">
-                  <label for="publicKeyText" class="form-label">Clé publique</label>
-                  <div class="input-group">
-                    <textarea id="publicKeyText" class="form-control" rows="6" readonly></textarea>
-                    <button id="copyPublic" class="btn btn-outline-secondary" type="button">Copier</button>
+            <div class="mb-3">
+              <label for="password" class="form-label"><i class="fa-solid fa-lock"></i> Mot de passe</label>
+              <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary w-100" type="submit"><i class="fa-solid fa-sign-in-alt"></i> Se connecter</button>
+          </form>
+          
+          <hr class="my-4">
+          
+          <div class="text-center">
+            <p class="text-muted mb-2">Pas encore de compte ?</p>
+            <button type="button" class="btn btn-outline-primary" onclick="showSignup('client')">
+              <i class="fa-solid fa-user-plus"></i> Créer un compte
+            </button>
+          </div>
+          <div id="signup" class="mt-4" style="display:none">
+            <h4 class="mb-3"><i class="fa-solid fa-user-plus"></i> Créer un compte</h4>
+            <form id="signupForm" method="post" autocomplete="on">
+              <input type="hidden" id="role" name="role" value="client">
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <div class="mb-2">
+                    <label for="signupFirstname" class="form-label small">Prénom</label>
+                    <input id="signupFirstname" class="form-control" type="text" name="firstname" placeholder="Prénom" required autocomplete="given-name">
                   </div>
                 </div>
-                <div class="form-text">Copiez et sauvegardez les clés privées/publiques. La clé privée ne sera pas stockée par le serveur.</div>
+                <div class="col-md-6">
+                  <div class="mb-2">
+                    <label for="signupLastname" class="form-label small">Nom</label>
+                    <input id="signupLastname" class="form-control" type="text" name="lastname" placeholder="Nom" required autocomplete="family-name">
+                  </div>
+                </div>
               </div>
+              <div class="mb-2">
+                <label for="signupEmail" class="form-label small">Email</label>
+                <input id="signupEmail" class="form-control" type="email" name="email" placeholder="votre@email.com" required autocomplete="email">
+              </div>
+              <div class="mb-2">
+                <label for="signupPassword" class="form-label small">Mot de passe</label>
+                <input id="signupPassword" class="form-control" type="password" name="password" placeholder="Minimum 8 caractères" required autocomplete="new-password">
+              </div>
+              <div class="mb-3">
+                <label for="signupConfirm" class="form-label small">Confirmer mot de passe</label>
+                <input id="signupConfirm" class="form-control" type="password" name="confirm_password" placeholder="Répéter le mot de passe" required autocomplete="new-password">
+              </div>
+
+              <!-- RGPD Compliance -->
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="rgpdConsent" required>
+                <label class="form-check-label small" for="rgpdConsent">
+                  J'accepte que mes données personnelles soient traitées conformément à la <a href="#" class="text-decoration-none">politique de confidentialité</a> et au <strong>RGPD</strong>.
+                </label>
+              </div>
+
+              <div class="alert alert-info">
+                <i class="fa-solid fa-info-circle"></i> <strong>Information :</strong> Vos clés RSA et votre token seront automatiquement téléchargés dans un fichier sécurisé après la création du compte.
+              </div>
+
+              <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-check-circle"></i> Créer mon compte</button>
+            </form>
+
+            <div id="successMessage" class="mt-3" style="display:none">
+              <div class="alert alert-success">
+                <i class="fa-solid fa-circle-check"></i> <strong>Compte créé avec succès !</strong><br>
+                Votre fichier de sécurité <code>moustass_credentials.txt</code> a été téléchargé automatiquement.<br>
+                <small class="text-muted">Conservez ce fichier en lieu sûr. Il contient vos clés privées et votre token d'accès.</small>
+              </div>
+              <button class="btn btn-primary w-100" onclick="redirectToDashboard()">
+                <i class="fa-solid fa-arrow-right"></i> Accéder au tableau de bord
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="text-center mt-3">
+        <small class="text-muted">
+          <i class="fa-solid fa-lock"></i> Connexion sécurisée avec chiffrement RSA-3072 et AES-256-GCM
+        </small>
       </div>
     </div>
     <script>
@@ -85,14 +151,138 @@
         const json = safeJsonParse(txt);
         return { ok: res.ok, json: json, text: txt };
       }
+
       function showSignup(role){
         document.getElementById('signup').style.display='block';
         document.getElementById('role').value = role;
       }
 
+      /**
+       * Télécharge automatiquement un fichier .txt avec les credentials
+       * @param {string} privateKey - Clé privée RSA
+       * @param {string} publicKey - Clé publique RSA
+       * @param {string} token - Token JWT
+       * @param {string} email - Email de l'utilisateur
+       */
+      function downloadCredentialsFile(privateKey, publicKey, token, email){
+        const timestamp = new Date().toISOString();
+        const content = `
+═══════════════════════════════════════════════════════════════
+          MOUSTASS VIDEO - FICHIER DE SÉCURITÉ
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT : Conservez ce fichier en lieu sûr !
+Ce fichier contient vos clés privées et votre token d'accès.
+Ne le partagez JAMAIS avec qui que ce soit.
+
+═══════════════════════════════════════════════════════════════
+INFORMATIONS DU COMPTE
+═══════════════════════════════════════════════════════════════
+
+Email: ${email}
+Date de création: ${timestamp}
+
+═══════════════════════════════════════════════════════════════
+TOKEN D'ACCÈS JWT
+═══════════════════════════════════════════════════════════════
+
+${token}
+
+ℹ️ Ce token commence par "ey" et sera automatiquement stocké.
+Il vous permet d'accéder à votre compte.
+
+═══════════════════════════════════════════════════════════════
+CLÉ PRIVÉE RSA (PRIVÉE - NE PAS PARTAGER)
+═══════════════════════════════════════════════════════════════
+
+${privateKey}
+
+⚠️ Cette clé est utilisée pour :
+   - Signer vos vidéos
+   - Déchiffrer les contenus chiffrés pour vous
+   
+🔒 GARDEZ CETTE CLÉ SECRÈTE !
+
+═══════════════════════════════════════════════════════════════
+CLÉ PUBLIQUE RSA (PUBLIQUE - PARTAGE POSSIBLE)
+═══════════════════════════════════════════════════════════════
+
+${publicKey}
+
+ℹ️ Cette clé est utilisée pour :
+   - Vérifier vos signatures
+   - Chiffrer des contenus pour vous
+   
+✓ Vous pouvez partager cette clé publiquement.
+
+═══════════════════════════════════════════════════════════════
+INFORMATIONS TECHNIQUES
+═══════════════════════════════════════════════════════════════
+
+Algorithme de signature: RSA-PSS avec SHA-256
+Taille de clé RSA: 3072 bits
+Chiffrement vidéo: AES-256-GCM
+Hachage: SHA-256
+
+═══════════════════════════════════════════════════════════════
+CONSEILS DE SÉCURITÉ
+═══════════════════════════════════════════════════════════════
+
+✓ Sauvegardez ce fichier dans un endroit sûr
+✓ Faites une copie de secours chiffrée
+✓ Ne transmettez JAMAIS votre clé privée
+✓ Changez votre mot de passe régulièrement
+✓ Activez l'authentification à deux facteurs si disponible
+
+═══════════════════════════════════════════════════════════════
+© ${new Date().getFullYear()} Moustass Video - Plateforme sécurisée de partage vidéo
+═══════════════════════════════════════════════════════════════
+`.trim();
+
+        // Créer un blob et télécharger le fichier
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        // Sanitize filename to prevent DOM XSS (remove any non safe chars)
+        const safeEmail = (email || 'user').replace(/[^a-zA-Z0-9_.-]/g, '_');
+        const safeFilename = `moustass_credentials_${safeEmail}_${Date.now()}.txt`;
+
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', safeFilename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      /**
+       * Redirige vers le dashboard après création de compte
+       */
+      function redirectToDashboard(){
+        const token = localStorage.getItem('access_token');
+        if(token){
+          // Décoder le token pour déterminer le rôle
+          try{
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const role = payload.role || '';
+            if(role.toUpperCase().includes('ADMIN')){
+              window.location.href = '/ui/index-admin.html';
+            }else{
+              window.location.href = '/ui/index-user.html';
+            }
+          }catch(e){
+            window.location.href = '/ui/index-user.html';
+          }
+        }else{
+          window.location.href = '/ui/index-user.html';
+        }
+      }
+
       document.addEventListener('DOMContentLoaded', ()=>{
         const f = document.getElementById('signupForm');
         const lf = document.getElementById('loginForm');
+        
         if(lf){
           lf.addEventListener('submit', async (e)=>{
             e.preventDefault();
@@ -108,7 +298,7 @@
                 let json = null;
                 try{ json = JSON.parse(txt); }catch(error_){ console.warn('Failed to parse /login response', error_, txt); json = null; }
               if(!res.ok){
-                showResponse('Login error', json?.detail || txt || 'Unknown error');
+                alert('Erreur de connexion: ' + (json?.detail || txt || 'Erreur inconnue'));
                 return;
               }
               const token = json.access_token;
@@ -117,19 +307,18 @@
                 localStorage.setItem('access_token', token);
                 // redirect based on role
                 if(role.toUpperCase().includes('ADMIN')){
-                  globalThis.location.href = '/ui/index-admin.html';
+                  window.location.href = '/ui/index-admin.html';
                 }else{
-                  globalThis.location.href = '/ui/index-user.html';
+                  window.location.href = '/ui/index-user.html';
                 }
               }else{
-                showResponse('Login', 'No access token returned');
+                alert('Aucun token d\'accès retourné');
               }
             }catch(error_){
-              showResponse('Network error', String(error_));
+              alert('Erreur réseau: ' + String(error_));
             }
           });
         }
-
 
         if(f){
           f.addEventListener('submit', async (e)=>{
@@ -137,6 +326,14 @@
             const form = e.target;
             const role = document.getElementById('role').value === 'admin' ? 'admin' : 'client';
             const endpoint = role === 'admin' ? '/signup_admin' : '/signup_client';
+            
+            // Vérifier le consentement RGPD
+            const rgpdConsent = document.getElementById('rgpdConsent');
+            if(!rgpdConsent.checked){
+              alert('❌ Vous devez accepter la politique de confidentialité et le RGPD pour créer un compte.');
+              return;
+            }
+
             const data = {
               firstname: form.firstname.value,
               lastname: form.lastname.value,
@@ -144,6 +341,7 @@
               password: form.password.value,
               confirm_password: form.confirm_password.value
             };
+            
             try{
               const res = await fetch(endpoint, {
                 method: 'POST',
@@ -151,87 +349,39 @@
                 body: JSON.stringify(data)
               });
               const { ok, json, text } = await parseJsonResponse(res);
+              
               if(!ok){
-                // prefer server-provided messages when available
                 const msg = json?.detail || json?.message || text || 'Erreur serveur';
-                showResponse('Erreur', msg);
+                alert('❌ Erreur lors de la création du compte:\n' + msg);
                 return;
               }
-              const pk = json?.private_key || json?.privateKey || '';
+              
+              const privateKey = json?.private_key || json?.privateKey || '';
+              const publicKey = json?.user?.public_key || '';
               const token = json?.access_token || '';
-              if(pk){
-                const pub = json?.user?.public_key || '';
-                if(token) localStorage.setItem('access_token', token);
-                showResponseKeys(pk, pub, token);
-                return;
-              }
+              
               if(token){
                 localStorage.setItem('access_token', token);
-                const box = document.getElementById('responseBox');
-                document.getElementById('tokenText').value = token;
-                box.style.display = 'block';
-                return;
               }
-              showResponse('Succès', JSON.stringify(json));
+              
+              if(privateKey && publicKey && token){
+                // Télécharger automatiquement le fichier credentials
+                downloadCredentialsFile(privateKey, publicKey, token, data.email);
+                
+                // Masquer le formulaire et afficher le message de succès
+                document.getElementById('signupForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+              }else{
+                alert('✅ Compte créé avec succès !');
+                redirectToDashboard();
+              }
             }catch(error_){
               console.error('Network error:', error_);
-              showResponse('Erreur réseau', String(error_));
+              alert('❌ Erreur réseau: ' + String(error_));
             }
           });
         }
       });
-
-      function showResponse(title, text){
-        const box = document.getElementById('responseBox');
-        const ta = document.getElementById('privateKeyText');
-        ta.value = text;
-        box.style.display = 'block';
-      }
-
-      function showResponseKeys(privateKey, publicKey, token){
-        const box = document.getElementById('responseBox');
-        document.getElementById('privateKeyText').value = privateKey || '';
-        document.getElementById('publicKeyText').value = publicKey || '';
-        if(token){ document.getElementById('tokenText').value = token; }
-        box.style.display = 'block';
-
-        document.getElementById('copyPrivate').onclick = async ()=>{
-          const ta = document.getElementById('privateKeyText');
-          try{
-            await navigator.clipboard.writeText(ta.value);
-            document.getElementById('copyPrivate').textContent='Copié';
-            setTimeout(()=>document.getElementById('copyPrivate').textContent='Copier',2000);
-          }catch(e){
-            console.warn('clipboard write failed for private key', e);
-            try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
-          }
-        };
-        document.getElementById('copyPublic').onclick = async ()=>{
-          const ta = document.getElementById('publicKeyText');
-          try{
-            await navigator.clipboard.writeText(ta.value);
-            document.getElementById('copyPublic').textContent='Copié';
-            setTimeout(()=>document.getElementById('copyPublic').textContent='Copier',2000);
-          }catch(e){
-            console.warn('clipboard write failed for public key', e);
-            try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
-          }
-        };
-        const copyTokenBtn = document.getElementById('copyToken');
-        if(copyTokenBtn){
-          copyTokenBtn.onclick = async ()=>{
-            const ta = document.getElementById('tokenText');
-            try{
-              await navigator.clipboard.writeText(ta.value);
-              copyTokenBtn.textContent='Copié';
-              setTimeout(()=>copyTokenBtn.textContent='Copier',2000);
-            }catch(e){
-              console.warn('clipboard write failed for token', e);
-              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
-            }
-          };
-        }
-      }
     </script>
   </body>
 </html>

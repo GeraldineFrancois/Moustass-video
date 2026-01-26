@@ -4,32 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard Admin</title>
-  <link rel="stylesheet" type="text/css" href="css/index.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" type="text/css" href="css/glassmorphism.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js" integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
-  <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample" id="btn-bars">
-      <i class="fa-solid fa-bars"></i>
-  </button>
-  <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title" id="offcanvasExampleLabel">Moustass Video</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
-      <div>
-        <p class="text-muted mb-3">Menu de l'application Moustass video</p>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="./index-admin.html"><i class="fa-solid fa-shield-halved"></i> Moustass Video Admin</a>
+      <div class="d-flex align-items-center gap-3">
+        <a class="nav-link" href="./index-admin.html"><i class="fa-solid fa-house"></i> Accueil</a>
+        <a class="nav-link" href="./pages/log-admin.html"><i class="fa-solid fa-clock-rotate-left"></i> Logs</a>
+        <a class="nav-link" href="./pages/video-admin.html"><i class="fa-solid fa-video"></i> Vidéos</a>
+        <button class="btn btn-danger btn-sm" id="logoutBtn" type="button"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</button>
       </div>
-      <ul>
-        <li class="nav-item list-nav"><a href="./index-admin.html" class="nav-link"> <i class="fa-solid fa-house"></i> Accueil</a></li>
-        <li class="nav-item list-nav"><a href="./pages/log-admin.html" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Logs</a></li>
-        <li class="nav-item list-nav"><a href="./pages/video-admin.html" class="nav-link"><i class="fa-solid fa-video"></i> Vidéos</a></li>
-      </ul>
-      <button class="btn btn-danger mt-3" id="logoutBtn" type="button"><i class="fa-solid fa-right-from-bracket"></i> Se déconnecter</button>
     </div>
-  </div>
+  </nav>
 
   <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
@@ -39,32 +30,31 @@
       </div>
       <div class="d-flex align-items-center gap-2">
         <button class="btn btn-outline-secondary btn-sm" id="refreshAllBtn"><i class="fa-solid fa-rotate"></i> Actualiser</button>
-        <button class="btn btn-outline-danger btn-sm" id="deleteAccountBtn"><i class="fa-solid fa-user-xmark"></i> Supprimer mon compte</button>
       </div>
     </div>
 
     <div class="row g-3 mb-4">
       <div class="col-md-4">
-        <div class="card text-white bg-primary card-index">
-          <div class="card-body">
-            <p class="card-text small text-white-50">Nombre de vidéos</p>
-            <p class="card-title h3" id="statTotalVideos">-</p>
+        <div class="card">
+          <div class="card-body text-center">
+            <p class="card-text small text-muted mb-2"><i class="fa-solid fa-video"></i> Nombre de vidéos</p>
+            <p class="card-title h2" id="statTotalVideos">-</p>
           </div>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="card text-white bg-success card-index">
-          <div class="card-body">
-            <p class="card-text small text-white-50">Vidéos signées</p>
-            <p class="card-title h3" id="statSignedVideos">-</p>
+        <div class="card">
+          <div class="card-body text-center">
+            <p class="card-text small text-muted mb-2"><i class="fa-solid fa-pen-nib"></i> Vidéos signées</p>
+            <p class="card-title h2" id="statSignedVideos">-</p>
           </div>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="card text-dark bg-warning card-index">
-          <div class="card-body">
-            <p class="card-text small text-black-50">Nombre de logs</p>
-            <p class="card-title h3" id="statLogs">-</p>
+        <div class="card">
+          <div class="card-body text-center">
+            <p class="card-text small text-muted mb-2"><i class="fa-solid fa-list"></i> Nombre de logs</p>
+            <p class="card-title h2" id="statLogs">-</p>
           </div>
         </div>
       </div>
@@ -96,7 +86,7 @@
               </div>
             </div>
             <div class="table-responsive">
-              <table class="table table-striped table-hover align-middle">
+              <table class="table table-hover align-middle">
                 <thead>
                   <tr><th>ID</th><th>Expéditeur</th><th>Destinataire</th><th>Statut</th><th>Signée</th><th>Montant</th><th>Expire</th><th>Actions</th></tr>
                 </thead>
@@ -118,7 +108,7 @@
               </div>
             </div>
             <div class="table-responsive">
-              <table class="table table-striped table-hover align-middle">
+              <table class="table table-hover align-middle">
                 <thead>
                   <tr><th>User ID</th><th>Action</th><th>Succès</th><th>Vidéo</th><th>Signée</th><th>Montant</th><th>Timestamp</th></tr>
                 </thead>
@@ -140,7 +130,7 @@
               </div>
             </div>
             <div class="table-responsive">
-              <table class="table table-striped table-hover align-middle">
+              <table class="table table-hover align-middle">
                 <thead>
                   <tr><th>Date connexion</th><th>Action</th><th>Succès</th><th>Timestamp</th><th>Vidéo</th></tr>
                 </thead>
@@ -717,8 +707,6 @@
       if(resetVideoCtxBtn) resetVideoCtxBtn.addEventListener('click', ()=>setVideoContext(''));
       const refreshAllBtn = document.getElementById('refreshAllBtn');
       if(refreshAllBtn) refreshAllBtn.addEventListener('click', ()=>{ loadVideos(); loadUserLogs(); loadAdminLogs(); });
-      const delBtn = document.getElementById('deleteAccountBtn');
-      if(delBtn) delBtn.addEventListener('click', deleteAccount);
       const confirmVerifyBtn = document.getElementById('confirmVerifyBtn');
       if(confirmVerifyBtn) confirmVerifyBtn.addEventListener('click', verifySignature);
     }

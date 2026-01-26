@@ -3,140 +3,516 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap 5.3.8 CSS avec vérification d'intégrité -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA==" crossorigin="anonymous">
-    <title>Client Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="/ui/css/glassmorphism.css">
+    <title>Tableau de Bord Client</title>
+    <style>
+      .pagination-container {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+      }
+      .pagination-btn {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        background: var(--glass-light);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .pagination-btn:hover:not(:disabled) {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: var(--primary-blue);
+        color: var(--text-primary);
+      }
+      .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .pagination-btn.active {
+        background: linear-gradient(90deg, var(--primary-blue), var(--primary-violet));
+        border-color: transparent;
+        color: var(--text-primary);
+      }
+    </style>
   </head>
-  <body class="p-4">
-    <div class="container">
-      <h3>Client Dashboard</h3>
-      <div class="mb-3 d-flex gap-2">
-        <button id="deleteAccountBtn" class="btn btn-danger">Supprimer mon compte</button>
-        <button id="logoutBtn" class="btn btn-secondary">Se déconnecter</button>
+  <body>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-user-circle"></i> Tableau de Bord Client</a>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-outline-secondary btn-sm" id="refreshBtn" type="button">
+            <i class="fa-solid fa-rotate"></i> Actualiser
+          </button>
+          <button class="btn btn-secondary btn-sm" id="logoutBtn" type="button">
+            <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+          </button>
+        </div>
       </div>
+    </nav>
 
-      <!-- Client tabpanel -->
-      <ul class="nav nav-tabs" id="clientTab">
-        <li class="nav-item">
-          <button class="nav-link active" id="c-tab-public-key" data-bs-toggle="tab" data-bs-target="#c-public-key" type="button">Ma clé publique</button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" id="c-tab-logs" data-bs-toggle="tab" data-bs-target="#c-logs" type="button">Historique de connexions</button>
-        </li>
-      </ul>
-      <div class="tab-content p-3 border border-top-0 mb-3">
-        <div class="tab-pane fade show active" id="c-public-key">
-          <div class="card p-3">
-            <h5>Vos clés</h5>
-            <div>
-              <label for="clientPublic" class="form-label">Clé publique</label>
-              <div class="d-flex gap-2 mb-2">
-                <button id="copyClientPublicBtn" class="btn btn-outline-secondary btn-sm">Copier la clé publique</button>
+    <div class="container-fluid py-4">
+      <div class="row">
+        <div class="col-12">
+          <!-- Tabs Navigation -->
+          <ul class="nav nav-tabs" id="clientTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="c-tab-overview" data-bs-toggle="tab" data-bs-target="#c-overview" type="button" role="tab" aria-controls="c-overview" aria-selected="true">
+                <i class="fa-solid fa-chart-line"></i> Aperçu
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="c-tab-logs" data-bs-toggle="tab" data-bs-target="#c-logs" type="button" role="tab" aria-controls="c-logs" aria-selected="false">
+                <i class="fa-solid fa-history"></i> Historique de connexions
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="c-tab-settings" data-bs-toggle="tab" data-bs-target="#c-settings" type="button" role="tab" aria-controls="c-settings" aria-selected="false">
+                <i class="fa-solid fa-cog"></i> Paramètres
+              </button>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content" id="clientTabContent">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="c-overview" role="tabpanel" aria-labelledby="c-tab-overview">
+              <div class="card mt-3">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fa-solid fa-info-circle"></i> Informations du Compte</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Email:</strong> <span id="userEmail" class="text-muted">Chargement...</span></p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>Prénom:</strong> <span id="userFirstname" class="text-muted">Chargement...</span></p>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Nom:</strong> <span id="userLastname" class="text-muted">Chargement...</span></p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>Rôle:</strong> <span class="badge bg-primary">Client</span></p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <textarea id="clientPublic" class="form-control" rows="6" readonly></textarea>
+
+              <div class="card mt-3">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fa-solid fa-key"></i> Clé Publique</h5>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted small">Votre clé publique est utilisée pour vérifier vos signatures et chiffrer des contenus pour vous.</p>
+                  <button class="btn btn-outline-primary btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#publicKeyModal">
+                    <i class="fa-solid fa-eye"></i> Afficher et copier la clé publique
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-pane fade" id="c-logs" role="tabpanel" aria-labelledby="c-tab-logs">
+              <div class="card mt-3">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fa-solid fa-history"></i> Historique de Connexions</h5>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted small mb-3">
+                    <i class="fa-solid fa-info-circle"></i> 
+                    Affichage des 5 dernières connexions. Les données sont traitées conformément au RGPD et supprimées après 90 jours d'inactivité.
+                  </p>
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                      <thead>
+                        <tr>
+                          <th>Date/Heure</th>
+                          <th>Action</th>
+                          <th>Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody id="logsTableBody">
+                        <tr><td colspan="3" class="text-center text-muted">Chargement...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="pagination-container" id="logsPagination"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="c-settings" role="tabpanel" aria-labelledby="c-tab-settings">
+              <div class="card mt-3 border-danger">
+                <div class="card-header bg-danger bg-opacity-10">
+                  <h5 class="mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Zone de Danger</h5>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted mb-3">
+                    <strong>⚠️ Attention:</strong> Les actions suivantes sont irréversibles. Veuillez les utiliser avec prudence.
+                  </p>
+                  
+                  <div class="alert alert-warning">
+                    <i class="fa-solid fa-shield-halved"></i> 
+                    <strong>Conformité RGPD:</strong> En supprimant votre compte, toutes vos données personnelles seront effacées dans un délai de 30 jours conformément au Règlement Général sur la Protection des Données.
+                  </div>
+
+                  <button class="btn btn-danger" id="deleteAccountBtn" type="button">
+                    <i class="fa-solid fa-user-slash"></i> Supprimer mon compte
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="tab-pane fade" id="c-logs">
-          <div class="card p-3 mt-3">
-            <h5>Historique des connexions</h5>
-            <div class="table-responsive">
-              <table id="logsTable" class="table table-sm">
-                <thead>
-                  <tr><th>ID</th><th>Action</th><th>Succès</th><th>Timestamp</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+      </div>
+    </div>
+
+    <!-- Modal: Public Key -->
+    <div class="modal fade" id="publicKeyModal" tabindex="-1" aria-labelledby="publicKeyModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="publicKeyModalLabel"><i class="fa-solid fa-key"></i> Clé Publique</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted small mb-3">
+              ✓ Vous pouvez partager publiquement cette clé pour permettre à d'autres de vérifier vos signatures.
+            </p>
+            <label for="clientPublic" class="form-label">Votre clé publique RSA</label>
+            <textarea id="clientPublic" class="form-control" rows="8" readonly></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-primary" id="copyClientPublicBtn">
+              <i class="fa-solid fa-copy"></i> Copier la clé
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Delete Account Confirmation -->
+    <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger bg-opacity-10">
+            <h5 class="modal-title text-danger" id="deleteAccountModalLabel">
+              <i class="fa-solid fa-triangle-exclamation"></i> Supprimer le compte
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-danger mb-3">
+              <strong>Attention !</strong> Cette action est <strong>irréversible</strong>.
+            </div>
+            <p>En supprimant votre compte:</p>
+            <ul>
+              <li>Votre compte et toutes vos données seront supprimés</li>
+              <li>Vos vidéos stockées seront effacées</li>
+              <li>Vous ne pourrez pas vous reconnecter</li>
+              <li>Conformément au RGPD, nous supprimerons vos données personnelles sous 30 jours</li>
+            </ul>
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+              <label class="form-check-label" for="confirmDelete">
+                Je confirme la suppression de mon compte et comprends que cette action est irréversible
+              </label>
             </div>
           </div>
-         </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+              <i class="fa-solid fa-trash-alt"></i> Supprimer définitivement
+            </button>
+          </div>
+        </div>
       </div>
-      <script>
-        /* ═══════════════════════════════════════════════════════════════════════════
-         * SÉCURITÉ XSS - Fonctions de protection contre l'injection de code
-         * ═══════════════════════════════════════════════════════════════════════════ */
+    </div>
 
-        /**
-         * Crée une cellule de tableau sécurisée avec du texte échappé.
-         * Utilise textContent au lieu de innerHTML pour éviter les XSS.
-         */
-        function createSafeCell(text, className = '') {
-          const td = document.createElement('td');
-          td.textContent = text ?? '';
-          if (className) td.className = className;
-          return td;
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // ═══════════════════════════════════════════════════════════════════════════
+      // CONFIGURATION & ÉTAT
+      // ═══════════════════════════════════════════════════════════════════════════
+      const LOGS_PER_PAGE = 5;
+      let allLogs = [];
+      let currentPage = 1;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // UTILITAIRES SÉCURITÉ XSS
+      // ═══════════════════════════════════════════════════════════════════════════
+      function createSafeCell(text, className = '') {
+        const td = document.createElement('td');
+        td.textContent = text ?? '';
+        if (className) td.className = className;
+        return td;
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // CHARGEMENT DES INFORMATIONS UTILISATEUR
+      // ═══════════════════════════════════════════════════════════════════════════
+      async function fetchUserInfo() {
+        const token = localStorage.getItem('access_token');
+        if(!token) return;
+        try{
+          const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
+          if(!res.ok) return;
+          const user = await res.json();
+          
+          document.getElementById('userEmail').textContent = user.email || '-';
+          document.getElementById('userFirstname').textContent = user.firstname || '-';
+          document.getElementById('userLastname').textContent = user.lastname || '-';
+          document.getElementById('clientPublic').value = user.public_key || '(Aucune clé publique)';
+        }catch(e){
+          console.warn('fetchUserInfo failed', e);
         }
+      }
 
-        /* ═══════════════════════════════════════════════════════════════════════════
-         * GESTION DE LA CLÉ PUBLIQUE
-         * ═══════════════════════════════════════════════════════════════════════════ */
+      // ═══════════════════════════════════════════════════════════════════════════
+      // CHARGEMENT DES LOGS AVEC TRI DÉCROISSANT
+      // ═══════════════════════════════════════════════════════════════════════════
+      async function fetchLogs(){
+        const token = localStorage.getItem('access_token');
+        if(!token) return;
+        try{
+          const res = await fetch('/logs', { headers: { 'Authorization': 'Bearer '+token } });
+          if(!res.ok) return;
+          const j = await res.json();
+          
+          // Récupérer et trier les logs par timestamp décroissant (récent → ancien)
+          allLogs = (j.logs || []).sort((a, b) => {
+            const dateA = new Date(a.timestamp || 0).getTime();
+            const dateB = new Date(b.timestamp || 0).getTime();
+            return dateB - dateA; // Décroissant
+          });
+          
+          currentPage = 1;
+          renderLogsPage();
+          renderPagination();
+        }catch(e){
+          console.warn('fetchLogs failed', e);
+        }
+      }
 
-        async function fetchMyPublicKey(){
-          const token = localStorage.getItem('access_token');
-          if(!token) return;
-          try{
-            const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
-            if(!res.ok) return;
-            const j = await res.json();
-            document.getElementById('clientPublic').value = j.public_key || '';
-          }catch(e){
-            console.warn('fetchMyPublicKey failed', e);
-            // keep UI silent but log the error for diagnostics
+      // ═══════════════════════════════════════════════════════════════════════════
+      // RENDU DE LA PAGE ACTUELLE
+      // ═══════════════════════════════════════════════════════════════════════════
+      function renderLogsPage() {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '';
+        
+        if(allLogs.length === 0) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td colspan="3" class="text-center text-muted py-3">Aucun historique de connexion</td>';
+          tbody.appendChild(tr);
+          return;
+        }
+        
+        const start = (currentPage - 1) * LOGS_PER_PAGE;
+        const end = start + LOGS_PER_PAGE;
+        const paginatedLogs = allLogs.slice(start, end);
+        
+        paginatedLogs.forEach(log => {
+          const tr = document.createElement('tr');
+          
+          // Formater la date
+          const date = new Date(log.timestamp || '');
+          const formattedDate = date.toLocaleString('fr-FR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+          
+          tr.appendChild(createSafeCell(formattedDate));
+          tr.appendChild(createSafeCell(log.action_type || 'N/A'));
+          
+          // Badge de statut
+          const statusTd = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = log.success ? 'badge bg-success' : 'badge bg-danger';
+          badge.textContent = log.success ? '✓ Succès' : '✗ Échoué';
+          statusTd.appendChild(badge);
+          tr.appendChild(statusTd);
+          
+          tbody.appendChild(tr);
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // RENDU DE LA PAGINATION
+      // ═══════════════════════════════════════════════════════════════════════════
+      function renderPagination() {
+        const container = document.getElementById('logsPagination');
+        container.innerHTML = '';
+        
+        const totalPages = Math.ceil(allLogs.length / LOGS_PER_PAGE);
+        if(totalPages <= 1) return;
+        
+        // Bouton Précédent
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'pagination-btn';
+        prevBtn.textContent = '← Précédent';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener('click', () => {
+          if(currentPage > 1) {
+            currentPage--;
+            renderLogsPage();
+            renderPagination();
           }
+        });
+        container.appendChild(prevBtn);
+        
+        // Numéros de page
+        for(let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement('button');
+          btn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+          btn.textContent = i;
+          btn.addEventListener('click', () => {
+            currentPage = i;
+            renderLogsPage();
+            renderPagination();
+          });
+          container.appendChild(btn);
         }
+        
+        // Bouton Suivant
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'pagination-btn';
+        nextBtn.textContent = 'Suivant →';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener('click', () => {
+          if(currentPage < totalPages) {
+            currentPage++;
+            renderLogsPage();
+            renderPagination();
+          }
+        });
+        container.appendChild(nextBtn);
+      }
 
-        document.addEventListener('DOMContentLoaded', ()=>{
-          fetchMyPublicKey();
-          fetchLogs();
-          document.getElementById('copyClientPublicBtn').addEventListener('click', async ()=>{
+      // ═══════════════════════════════════════════════════════════════════════════
+      // SUPPRESSION DE COMPTE AVEC CONFIRMATION RGPD
+      // ═══════════════════════════════════════════════════════════════════════════
+      async function deleteAccount() {
+        const token = localStorage.getItem('access_token');
+        if(!token) {
+          alert('Non authentifié');
+          return;
+        }
+        
+        try{
+          const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
+          if(!res.ok) {
+            alert('Impossible de récupérer vos informations');
+            return;
+          }
+          const me = await res.json();
+          
+          // Afficher le modal de confirmation
+          const modal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
+          modal.show();
+          
+          // Attendre la confirmation
+          document.getElementById('confirmDeleteBtn').onclick = async () => {
+            try{
+              const form = new FormData();
+              form.append('email', me.email);
+              
+              const delRes = await fetch('/delete_account', { 
+                method: 'POST', 
+                body: form,
+                headers: { 'Authorization': 'Bearer '+token }
+              });
+              
+              if(!delRes.ok) {
+                alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
+                return;
+              }
+              
+              localStorage.removeItem('access_token');
+              alert('✅ Votre compte a été supprimé. Vos données seront définitivement effacées sous 30 jours conformément au RGPD.');
+              window.location.href = '/';
+            }catch(err){
+              console.error('Delete error:', err);
+              alert('❌ Erreur lors de la suppression: ' + err.message);
+            }
+          };
+        }catch(err){
+          console.error('Error in deleteAccount:', err);
+          alert('❌ Erreur: ' + err.message);
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // ÉVÉNEMENTS DU DOM
+      // ═══════════════════════════════════════════════════════════════════════════
+      document.addEventListener('DOMContentLoaded', () => {
+        // Charger les données initiales
+        fetchUserInfo();
+        fetchLogs();
+        
+        // Copier la clé publique
+        const copyBtn = document.getElementById('copyClientPublicBtn');
+        if(copyBtn) {
+          copyBtn.addEventListener('click', async () => {
             const ta = document.getElementById('clientPublic');
             try{
               await navigator.clipboard.writeText(ta.value);
+              copyBtn.textContent = '✓ Copié!';
+              setTimeout(() => {
+                copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copier la clé';
+              }, 2000);
             }catch(e){
-              console.warn('clipboard write failed, falling back to select()', e);
-              try{ ta.select(); }catch(error_){ console.warn('textarea select failed', error_); }
+              console.warn('clipboard write failed', e);
+              ta.select();
             }
           });
-          // wire logout/delete
-          const logoutBtn = document.getElementById('logoutBtn');
-          if(logoutBtn) logoutBtn.addEventListener('click', ()=>{ localStorage.removeItem('access_token'); globalThis.location.href = '/'; });
-          const delBtn = document.getElementById('deleteAccountBtn');
-          if(delBtn) delBtn.addEventListener('click', async ()=>{
-            if(!confirm('Supprimer votre compte ? Cette action est irréversible.')) return;
-            const token = localStorage.getItem('access_token');
-            if(!token) return alert('Non authentifié');
-            const res = await fetch('/me', { headers: { 'Authorization': 'Bearer '+token } });
-            if(!res.ok) return alert('Impossible de récupérer l\'utilisateur');
-            const me = await res.json();
-            const form = new FormData(); form.append('email', me.email);
-            const del = await fetch('/delete_account', { method:'POST', body: form });
-            if(!del.ok) return alert('Erreur lors de la suppression');
-            localStorage.removeItem('access_token'); globalThis.location.href = '/';
-          });
-        });
-
-        async function fetchLogs(){
-          const token = localStorage.getItem('access_token');
-          if(!token) return;
-          try{
-            const res = await fetch('/logs', { headers: { 'Authorization': 'Bearer '+token } });
-            if(!res.ok) return;
-            const j = await res.json();
-            const tbody = document.querySelector('#logsTable tbody');
-            tbody.innerHTML = '';
-            (j.logs||[]).forEach(r=>{
-              // Création sécurisée de la ligne (protection XSS)
-              const tr = document.createElement('tr');
-              tr.appendChild(createSafeCell(r.id));
-              tr.appendChild(createSafeCell(r.action_type));
-              tr.appendChild(createSafeCell(r.success ? 'Oui' : 'Non'));
-              tr.appendChild(createSafeCell(r.timestamp || ''));
-              tbody.appendChild(tr);
-            });
-          }catch(e){ console.warn('fetchLogs failed', e); }
         }
-      </script>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        
+        // Bouton Déconnexion
+        const logoutBtn = document.getElementById('logoutBtn');
+        if(logoutBtn) {
+          logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('access_token');
+            window.location.href = '/';
+          });
+        }
+        
+        // Bouton Supprimer le compte
+        const deleteBtn = document.getElementById('deleteAccountBtn');
+        if(deleteBtn) {
+          deleteBtn.addEventListener('click', deleteAccount);
+        }
+        
+        // Bouton Actualiser
+        const refreshBtn = document.getElementById('refreshBtn');
+        if(refreshBtn) {
+          refreshBtn.addEventListener('click', () => {
+            fetchUserInfo();
+            fetchLogs();
+          });
+        }
+        
+        // Confirmation de suppression - Validation checkbox
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if(confirmCheckbox && confirmBtn) {
+          confirmCheckbox.addEventListener('change', () => {
+            confirmBtn.disabled = !confirmCheckbox.checked;
+          });
+        }
+      });
+    </script>
   </body>
 </html>
