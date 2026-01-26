@@ -1,0 +1,411 @@
+/* ============================================
+   GLASSMORPHISM MODERN STYLE
+   Cartes avec backdrop blur, gradients subtils
+   Vibe: Moderne, épuré, premium
+   ============================================ */
+
+:root {
+  --primary-blue: #3b82f6;
+  --primary-violet: #8b5cf6;
+  --accent-cyan: #06b6d4;
+  --bg-dark: #0f172a;
+  --bg-light: #1e293b;
+  --glass-light: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+body {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f35 50%, var(--primary-violet) 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ============================================
+   NAVBAR GLASSMORPHISM
+   ============================================ */
+.navbar {
+  background: var(--glass-light) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.navbar-brand {
+  color: var(--text-primary) !important;
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.5px;
+}
+
+.nav-link {
+  color: var(--text-secondary) !important;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--accent-cyan) !important;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-blue), var(--accent-cyan));
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.dropdown-menu {
+  background: var(--glass-light) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.dropdown-item {
+  color: var(--text-secondary) !important;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  color: var(--accent-cyan) !important;
+}
+
+/* ============================================
+   CARDS GLASSMORPHISM
+   ============================================ */
+.card {
+  background: var(--glass-light) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 15px !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 48px 0 rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.card-header {
+  background: linear-gradient(90deg, var(--primary-blue), var(--primary-violet)) !important;
+  border: none !important;
+  border-radius: 15px 15px 0 0 !important;
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.card-body {
+  padding: 1.5rem !important;
+  color: var(--text-secondary);
+}
+
+.card-title {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  margin-bottom: 0.5rem !important;
+}
+
+/* ============================================
+   BUTTONS GLASSMORPHISM
+   ============================================ */
+.btn {
+  border-radius: 10px !important;
+  font-weight: 500;
+  transition: all 0.3s ease !important;
+  border: 1px solid transparent !important;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary-blue), var(--primary-violet)) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+  border-color: var(--accent-cyan) !important;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline-primary {
+  background: transparent !important;
+  border: 2px solid var(--primary-blue) !important;
+  color: var(--accent-cyan) !important;
+}
+
+.btn-outline-primary:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: var(--accent-cyan) !important;
+  color: var(--accent-cyan) !important;
+}
+
+.btn-success {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.btn-success:hover {
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(90deg, #ef4444, #dc2626) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.btn-danger:hover {
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+.btn-link {
+  color: var(--accent-cyan) !important;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  color: var(--primary-blue) !important;
+  text-decoration: underline;
+}
+
+/* ============================================
+   ALERTS GLASSMORPHISM
+   ============================================ */
+.alert {
+  background: var(--glass-light) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 10px;
+  color: var(--text-secondary) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.alert-info {
+  border-left: 4px solid var(--primary-blue) !important;
+}
+
+.alert-success {
+  border-left: 4px solid #10b981 !important;
+}
+
+.alert-warning {
+  border-left: 4px solid #f59e0b !important;
+}
+
+.alert-danger {
+  border-left: 4px solid #ef4444 !important;
+}
+
+/* ============================================
+   TABLES GLASMORPHISM
+   ============================================ */
+.table {
+  color: var(--text-secondary);
+}
+
+.table thead th {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.table tbody td {
+  border: 1px solid var(--glass-border);
+  padding: 0.75rem !important;
+}
+
+/* ============================================
+   MODALS GLASMORPHISM
+   ============================================ */
+.modal-content {
+  background: var(--glass-light) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  color: var(--text-primary);
+}
+
+.modal-header {
+  background: linear-gradient(90deg, var(--primary-blue), var(--primary-violet)) !important;
+  border: none !important;
+  border-radius: 15px 15px 0 0;
+}
+
+.modal-header .btn-close {
+  filter: brightness(1.5);
+}
+
+.modal-body {
+  color: var(--text-secondary);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--glass-border) !important;
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+.form-control,
+.form-select,
+textarea {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea:focus {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+  color: var(--text-primary) !important;
+}
+
+.form-control::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* ============================================
+   TEXT & TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.lead {
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
+/* ============================================
+   SPACING & LAYOUT
+   ============================================ */
+.container {
+  padding: 2rem 1rem;
+}
+
+.row {
+  row-gap: 2rem;
+}
+
+.col-md-6,
+.col-md-4 {
+  transition: all 0.3s ease;
+}
+
+/* ============================================
+   SPECIAL ELEMENTS
+   ============================================ */
+.badge {
+  background: linear-gradient(90deg, var(--primary-blue), var(--accent-cyan)) !important;
+  border-radius: 20px;
+  padding: 0.4rem 0.8rem;
+}
+
+.badge-success {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+}
+
+.badge-danger {
+  background: linear-gradient(90deg, #ef4444, #dc2626) !important;
+}
+
+/* ============================================
+   SCROLLBAR CUSTOM
+   ============================================ */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--primary-blue), var(--primary-violet));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, var(--accent-cyan), var(--primary-blue));
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+  }
+}
