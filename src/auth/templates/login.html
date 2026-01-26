@@ -242,9 +242,14 @@ CONSEILS DE SÉCURITÉ
         // Créer un blob et télécharger le fichier
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
+
+        // Sanitize filename to prevent DOM XSS (remove any non safe chars)
+        const safeEmail = (email || 'user').replace(/[^a-zA-Z0-9_.-]/g, '_');
+        const safeFilename = `moustass_credentials_${safeEmail}_${Date.now()}.txt`;
+
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `moustass_credentials_${email.split('@')[0]}_${Date.now()}.txt`;
+        a.setAttribute('href', url);
+        a.setAttribute('download', safeFilename);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
